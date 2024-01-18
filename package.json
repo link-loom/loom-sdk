@@ -1,8 +1,11 @@
 {
-    "name": "loom-sdk",
+    "name": "@link-loom/sdk",
     "version": "7.0.0",
     "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
     "main": "index.js",
+    "publishConfig": {
+        "access": "public"
+      },
     "repository": {
       "type": "git",
       "url": "https://github.com/link-loom/loom-sdk.git"

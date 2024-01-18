@@ -1,5 +1,5 @@
-[![GitHub license](https://img.shields.io/github/license/link-loom/loom-svc-js.svg)](https://github.com/link-loom/loom-svc-js/blob/master/LICENSE) 
-[![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/beat-cli)
+[![GitHub license](https://img.shields.io/github/license/link-loom/loom-sdk.svg)](https://github.com/link-loom/loom-sdk/blob/master/LICENSE) 
+[![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/@link-loom/sdk)
 
 # loom-sdk
 

@@ -1,29 +1,29 @@
 {
     "name": "@link-loom/sdk",
-    "version": "7.0.1",
+    "version": "7.0.2",
     "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
     "main": "index.js",
     "publishConfig": {
         "access": "public"
-      },
+    },
     "repository": {
-      "type": "git",
-      "url": "https://github.com/link-loom/loom-sdk.git"
+        "type": "git",
+        "url": "https://github.com/link-loom/loom-sdk.git"
     },
     "author": "Camilo Alexander Rodriguez Cuaran <camiepisode@outlook.com>",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/link-loom/loom-sdk/issues"
+        "url": "https://github.com/link-loom/loom-sdk/issues"
     },
     "homepage": "https://github.com/link-loom/loom-sdk",
     "keywords": [
-      "loom",
-      "sdk",
-      "core",
-      "microservices",
-      "node.js",
-      "javascript",
-      "link-loom"
+        "loom",
+        "sdk",
+        "core",
+        "microservices",
+        "node.js",
+        "javascript",
+        "link-loom"
     ],
     "dependencies": {
         "aes-js": "^3.1.2",
@@ -56,9 +56,8 @@
         "eslint-plugin-prettier": "^5.0.0",
         "prettier": "^3.0.3"
     },
-    "scripts": {      
-    "lint": "eslint src/**/*.{js,jsx}",
-    "format": "prettier --write **/*.{js,jsx}"
+    "scripts": {
+        "lint": "eslint src/**/*.{js,jsx}",
+        "format": "prettier --write **/*.{js,jsx}"
     }
-  }
-  
+}

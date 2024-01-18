@@ -26,7 +26,7 @@ Another Node.js Server framework to create microservices or huge monoliths.
 Step 1. Install Loom to easily manage files and project
 
 ```shell
-npm install --save loom-sdk
+npm install --save @link-loom/sdk
 ```
 
 ## Create project
@@ -34,13 +34,13 @@ npm install --save loom-sdk
 Step 1. Install Loom to easily manage files and project
 
 ```shell
-npm install -g link-loom
+npm install -g @link-loom/cli
 ```
 
 Step 2. Create a project with cli tool and follow instructions
 
 ```shell
-link-loom new-project name-of-project
+link-loom -n name-of-project
 ```
 
 ## Install dependencies

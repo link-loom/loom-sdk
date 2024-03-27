@@ -116,7 +116,7 @@ class DependenciesManager {
       const veripassApiKey = process.env.VERIPASS_API_KEY;
 
       const veripassResponse = await this._dependencies.request.get(
-        veripassServiceUrl,
+        `${veripassServiceUrl}/?environment_type=${veripassEnvironmentName ?? 'development'}`,
         {
           headers: {
             Authorization: `Bearer ${veripassApiKey}`,

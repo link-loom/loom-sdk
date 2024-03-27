@@ -114,6 +114,7 @@ class DependenciesManager {
     try {
       const veripassServiceUrl = process.env.VERIPASS_SERVICE_URL;
       const veripassApiKey = process.env.VERIPASS_API_KEY;
+      const veripassEnvironmentName = process.env.VERIPASS_ENVIRONMENT_NAME;
 
       const veripassResponse = await this._dependencies.request.get(
         `${veripassServiceUrl}/?environment_type=${veripassEnvironmentName ?? 'development'}`,

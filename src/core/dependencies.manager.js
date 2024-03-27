@@ -128,13 +128,16 @@ class DependenciesManager {
         veripassResponse.data?.result?.matchedItems?.[0]?.variables;
 
       this._dependencies.config = veripassConfig;
+
       return true;
     } catch (error) {
+      console.log(error);
       console.error(
         ` ${this._dependencies.colors.green(
           this._namespace,
         )}: Error loading Veripass configuration`,
       );
+
       return false;
     }
   }

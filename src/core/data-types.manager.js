@@ -9,6 +9,7 @@ class DataTypesManager {
     /* Assigments */
     this._namespace = '[Server]::[DAL]::[Manager]';
     this._dataTypes = {};
+    this._dynamicTypes = {};
   }
 
   setup() {
@@ -21,8 +22,17 @@ class DataTypesManager {
     this._console.success('Loaded', { namespace: this._namespace });
   }
 
+  registerType(name, defaultVal = {}) {
+    this._dynamicTypes[name] = { name: name, default: defaultVal };
+    this._console.info(`Type '${name}' registered successfully.`);
+  }
+
+  getType(name) {
+    return this._dynamicTypes[name] || this._dataTypes[name];
+  }
+
   get types() {
-    return this._dataTypes;
+    return {...this._dataTypes, ...this._dynamicTypes};
   }
 }
 

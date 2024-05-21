@@ -5,6 +5,7 @@ class ModelManager {
     this._console = dependencies.console;
 
     /* Custom Properties */
+    this._dataTypesManager = this._dependencies.DataTypesManager;
 
     /* Assigments */
     this._namespace = '[Server]::[Model]::[Manager]';
@@ -21,18 +22,20 @@ class ModelManager {
 
   // Registers all models as types, assigns an empty object on instantiation failure
   #registerModelsAsTypes() {
-    Object.keys(this._models).forEach(modelName => {
+    Object.keys(this._models).forEach((modelName) => {
       const Model = this._models[modelName];
       let defaultInstance;
       try {
-        defaultInstance = new Model();  // Attempts to create a model instance
+        defaultInstance = new Model(); // Attempts to create a model instance
       } catch (error) {
-        this._console.error(`Failed to instantiate ${modelName}: ${error.message}`);
-        defaultInstance = {};  // Assigns an empty object if there is an error
+        this._console.error(
+          `Failed to instantiate ${modelName}: ${error.message}`,
+        );
+        defaultInstance = {}; // Assigns an empty object if there is an error
       }
-      this._dataTypesManager.registerType(modelName, {
+      this._dataTypesManager.registerType({
         name: modelName,
-        default: defaultInstance
+        instance: defaultInstance,
       });
     });
     this._console.info('All models registered as types successfully.');

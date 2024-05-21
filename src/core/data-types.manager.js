@@ -7,7 +7,7 @@ class DataTypesManager {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[DAL]::[Manager]';
+    this._namespace = '[Server]::[Data-Types]::[Manager]';
     this._dataTypes = {};
     this._dynamicTypes = {};
   }
@@ -15,15 +15,13 @@ class DataTypesManager {
   setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    this._dataTypes = require(
-      `${this._dependencies.root}/src/data-types/definition.types`,
-    );
+    this._dataTypes = require(`./utils/data-types/definition.types`);
 
     this._console.success('Loaded', { namespace: this._namespace });
   }
 
-  registerType(name, defaultVal = {}) {
-    this._dynamicTypes[name] = { name: name, default: defaultVal };
+  registerType({ name, instance = {} }) {
+    this._dynamicTypes[name] = { name: name, default: instance };
     this._console.info(`Type '${name}' registered successfully.`);
   }
 
@@ -32,7 +30,7 @@ class DataTypesManager {
   }
 
   get types() {
-    return {...this._dataTypes, ...this._dynamicTypes};
+    return { ...this._dataTypes, ...this._dynamicTypes };
   }
 }
 

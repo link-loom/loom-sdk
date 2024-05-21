@@ -10,7 +10,7 @@ class ServerManager {
     this._consoleManager = {};
     this._eventBusManager = {};
     this._modelsManager = {};
-    this._dalManager = {};
+    this._dataTypesManager = {};
     this._authManager = {};
     this._databaseManager = {};
     this._pushManager = {};
@@ -148,12 +148,15 @@ class ServerManager {
 
   async #setupDataTypes() {
     const { DataTypesManager } = require('./data-types.manager');
-    this._dalManager = new DataTypesManager(
+    this._dataTypesManager = new DataTypesManager(
       this._dependenciesManager.core.get(),
     );
-    this._dalManager.setup();
+    this._dataTypesManager.setup();
 
-    this._dependenciesManager.core.add(this._dalManager, 'DataTypesManager');
+    this._dependenciesManager.core.add(
+      this._dataTypesManager,
+      'DataTypesManager',
+    );
   }
 
   #setupDatabase() {

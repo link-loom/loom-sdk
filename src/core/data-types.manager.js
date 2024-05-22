@@ -22,7 +22,9 @@ class DataTypesManager {
 
   registerType({ name, instance = {} }) {
     this._dynamicTypes[name] = { name: name, default: instance };
-    this._console.info(`Type '${name}' registered successfully.`);
+    this._console.info(`Type '${name}' registered successfully.`, {
+      namespace: this._namespace,
+    });
   }
 
   getType(name) {

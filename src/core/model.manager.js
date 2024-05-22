@@ -37,7 +37,7 @@ class ModelManager {
 
       this._dataTypesManager.registerType({
         name: modelName,
-        instance: defaultInstance,
+        instance: defaultInstance.get,
       });
     });
     this._console.success('All models registered as types successfully.', { namespace: this._namespace });

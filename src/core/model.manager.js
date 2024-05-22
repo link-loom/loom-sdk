@@ -40,7 +40,7 @@ class ModelManager {
         instance: defaultInstance,
       });
     });
-    this._console.info('All models registered as types successfully.');
+    this._console.success('All models registered as types successfully.', { namespace: this._namespace });
   }
 
   get models() {

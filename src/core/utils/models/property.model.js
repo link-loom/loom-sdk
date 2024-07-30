@@ -19,6 +19,7 @@ class SimpleProperty {
 class ComplexProperty {
   constructor({ value, model, type, dependencies }) {
     const typeDef = dependencies.DataTypesManager.getType(type.name);
+
     this._value = value ? new model(value, dependencies) : typeDef.default;
     this._type = type;
   }
@@ -38,12 +39,13 @@ class Property {
     if (!dependencies) {
       return new SimpleProperty({ value, type });
     }
+    
     var types = dependencies.DataTypesManager.types;
     var typeModel = types[type.name];
     var complexType = types[type.name]?.default ?? {};
 
     if (typeof type === 'function' || complexType) {
-      return new ComplexProperty({ value, model: typeModel, type: typeModel, dependencies });
+      return new ComplexProperty({ value, model: complexType.constructor, type: typeModel, dependencies });
     } else {
       this._value = value;
       this._type = type;

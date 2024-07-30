@@ -39,11 +39,11 @@ class Property {
       return new SimpleProperty({ value, type });
     }
     var types = dependencies.DataTypesManager.types;
-    var typeModel = dependencies.ModelsManager.models[type.name];
+    var typeModel = types[type.name];
     var complexType = types[type.name]?.default ?? {};
 
     if (typeof type === 'function' || complexType) {
-      return new ComplexProperty({ value, model: typeModel, type, dependencies });
+      return new ComplexProperty({ value, model: typeModel, type: typeModel, dependencies });
     } else {
       this._value = value;
       this._type = type;

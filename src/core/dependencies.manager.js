@@ -130,6 +130,9 @@ class DependenciesManager {
 
       this._dependencies.config = veripassConfig;
 
+
+      console.log(` ${this._dependencies.colors.green(this._namespace)}: Running Veripass environment variables`);
+
       return true;
     } catch (error) {
       console.log(error);

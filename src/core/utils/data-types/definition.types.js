@@ -58,5 +58,17 @@ module.exports = {
   point: {
     name: 'point',
     default: { lat: 0, lang: 0 },
+  },
+  location: {
+    name: 'location',
+    default: {
+      continent: '',
+      country: '',
+      city: '',
+      point: {
+        lat: 0,
+        lang: 0
+      }
+    },
   }
 };

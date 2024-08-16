@@ -67,7 +67,7 @@ module.exports = {
       city: '',
       point: {
         lat: 0,
-        lang: 0
+        lon: 0
       }
     },
   }

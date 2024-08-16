@@ -102,7 +102,7 @@ class ModelBase {
     const statuses = this.constructor.statuses;
 
     this.last_modification = new Property({ value: this.timestamp, type: this.types.timestamp });
-    this.id = new Property({ value: args.id, type: this.types.bigserial, isPK: true });
+    this.id = new Property({ value: args.id, type: this.types.string, isPK: true });
     this.date_creation = new Property({ value: this.timestamp, type: this.types.timestamp });
     this.last_user_modification = new Property({ value: args.user_id, type: this.types.object });
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });

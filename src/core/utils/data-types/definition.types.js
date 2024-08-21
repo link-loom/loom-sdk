@@ -70,5 +70,9 @@ module.exports = {
         lon: 0
       }
     },
+    log: {
+      user: { id: '' },
+      timestamp: ''
+    }
   }
 };

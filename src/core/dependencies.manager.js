@@ -126,7 +126,7 @@ class DependenciesManager {
       );
 
       const veripassConfig =
-        veripassResponse.data?.result?.matchedItems?.[0]?.variables;
+        veripassResponse.data?.result?.items?.[0]?.variables;
 
       this._dependencies.config = veripassConfig;
 
@@ -160,7 +160,7 @@ class DependenciesManager {
   }
 
   #importCustomDependencies() {
-    const dependencies = this._dependencies.config.CUSTOM_DEPENDENCIES;
+    const dependencies = this._dependencies?.config?.CUSTOM_DEPENDENCIES || [];
 
     if (!dependencies || !dependencies.length) {
       return;

@@ -105,7 +105,8 @@ class ModelBase {
 
     this.created = new Property({ value: this.created, type: this.types.log });
     this.modified = new Property({ value: this.modified, type: this.types.log });
-    this.deleted = new Property({ value: this.modified, type: this.types.log });
+    this.deleted = new Property({ value: this.deleted, type: this.types.log });
+    this.history = new Property({ value: this.deleted, type: this.types.array });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });
   }
@@ -115,9 +116,17 @@ class ModelBase {
     this.created = baseProperties.created;
     this.modified = baseProperties.modified;
     this.deleted = baseProperties.deleted;
+    this.history = baseProperties.history;
     this.status = baseProperties.status;
 
     return this;
+  }
+
+  setLogProperty({ property, user }) {
+    this[property] = {
+      user,
+      timestamp: this.timestamp
+    }
   }
 }
 

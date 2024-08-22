@@ -71,8 +71,11 @@ module.exports = {
       }
     },
     log: {
-      user: { id: '' },
-      timestamp: ''
+      name: 'log',
+      default: {
+        user: { id: '' },
+        timestamp: ''
+      }
     }
   }
 };

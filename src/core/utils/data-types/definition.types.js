@@ -69,13 +69,13 @@ module.exports = {
         lat: 0,
         lon: 0
       }
-    },
-    log: {
-      name: 'log',
-      default: {
-        user: { id: '' },
-        timestamp: ''
-      }
+    }
+  },
+  log: {
+    name: 'log',
+    default: {
+      user: { id: '' },
+      timestamp: ''
     }
   }
 };

@@ -122,7 +122,7 @@ class ModelBase {
     return this;
   }
 
-  set logAction({ args, property, action }) {
+  logAction({ args, property, action }) {
     this.history?.push({
       action: action ?? property,
       user: args[property]?.user || '',

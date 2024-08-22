@@ -122,13 +122,16 @@ class ModelBase {
     return this;
   }
 
-  logAction({ args, property, action }) {
-    this.history?.push({
-      action: action ?? property,
-      user: args[property]?.user || '',
-      metadata: args[property]?.metadata ?? {},
-      timestamp: this.timestamp
-    })
+  logAction(args, property, action = '', details = '') {
+    if (this.history) {
+      this.history?.value?.push({
+        action: action || property,
+        user: args[property]?.user || '',
+        metadata: args[property]?.metadata ?? {},
+        timestamp: this.timestamp,
+        details
+      })
+    }
 
     this[property] = new Property({
       value: {

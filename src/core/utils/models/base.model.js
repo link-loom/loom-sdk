@@ -106,7 +106,7 @@ class ModelBase {
     this.created = new Property({ value: this.created, type: this.types.log });
     this.modified = new Property({ value: this.modified, type: this.types.log });
     this.deleted = new Property({ value: this.deleted, type: this.types.log });
-    this.history = new Property({ value: this.deleted, type: this.types.array });
+    this.history = new Property({ value: this.history, type: this.types.array });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });
   }
@@ -122,11 +122,21 @@ class ModelBase {
     return this;
   }
 
-  setLogProperty({ property, user }) {
-    this[property] = {
-      user,
+  set logAction({ args, property, action }) {
+    this.history?.push({
+      action: action ?? property,
+      user: args[property]?.user || '',
+      metadata: args[property]?.metadata ?? {},
       timestamp: this.timestamp
-    }
+    })
+
+    this[property] = new Property({
+      value: {
+        user: args[property]?.user || '',
+        timestamp: this.timestamp,
+        metadata: args[property]?.metadata ?? {}
+      }, type: this.types.log
+    });
   }
 }
 

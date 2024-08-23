@@ -10,6 +10,10 @@ class SimpleProperty {
     return this._value ?? this._type.default;
   }
 
+  set value(newValue) {
+    this._value = newValue;
+  }
+
   setBaseProperties(baseProperties) {
     this._value = baseProperties._value;
     return this;
@@ -26,6 +30,14 @@ class ComplexProperty {
 
   get value() {
     return this._value?.get ?? '';
+  }
+
+  set value(newValue) {
+    if (this._value && typeof this._value === 'object' && '_value' in this._value) {
+      this._value._value = newValue;
+    } else {
+      this._value = newValue;
+    }
   }
 
   setBaseProperties(baseProperties) {

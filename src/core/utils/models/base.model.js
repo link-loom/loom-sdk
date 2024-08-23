@@ -124,13 +124,15 @@ class ModelBase {
 
   logAction(args, property, action = '', details = '', metadata = {}) {
     if (this.history) {
-      this.history?.value?.push({
+      const log = {
         action: action || property,
         user: args[property]?.user || '',
         metadata: metadata ?? {},
         timestamp: this.timestamp,
         details
-      })
+      }
+      const newHistory = [...this.history.value, log];
+      this.history.value = newHistory;
     }
 
     this[property] = new Property({

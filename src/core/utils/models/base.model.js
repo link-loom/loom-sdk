@@ -103,10 +103,10 @@ class ModelBase {
 
     this.id = new Property({ value: args.id, type: this.types.string, isPK: true });
 
-    this.created = new Property({ value: this.created, type: this.types.log });
-    this.modified = new Property({ value: this.modified, type: this.types.log });
-    this.deleted = new Property({ value: this.deleted, type: this.types.log });
-    this.history = new Property({ value: this.history, type: this.types.array });
+    this.created = new Property({ value: args.created, type: this.types.log });
+    this.modified = new Property({ value: args.modified, type: this.types.log });
+    this.deleted = new Property({ value: args.deleted, type: this.types.log });
+    this.history = new Property({ value: args.history, type: this.types.array });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });
   }
@@ -126,12 +126,13 @@ class ModelBase {
     if (this.history) {
       const log = {
         action: action || property,
-        user: args[property]?.user || '',
+        user: args[property]?.user || args?.log?.user || '',
         metadata: metadata ?? {},
         timestamp: this.timestamp,
         details
       }
       const newHistory = [...this.history.value, log];
+      
       this.history.value = newHistory;
     }
 

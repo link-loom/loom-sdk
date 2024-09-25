@@ -36,10 +36,10 @@ class ModelBase {
   #dataTypesManager;
 
   static defaultStatuses = {
-    deleted: { id: -1, name: 'deleted', title: 'Deleted' },
-    inactive: { id: 0, name: 'inactive', title: 'Inactive' },
-    active: { id: 1, name: 'active', title: 'Active' },
-    pending: { id: 2, name: 'pending', title: 'Pending' },
+    deleted: { id: -1, name: 'deleted', title: 'Deleted', color: '#d32f2f' },
+    inactive: { id: 0, name: 'inactive', title: 'Inactive',color: '#757575' },
+    active: { id: 1, name: 'active', title: 'Active', color: '#2e7d32' },
+    pending: { id: 2, name: 'pending', title: 'Pending', color: '#ed6c02' },
   };
 
   constructor(dependencies) {

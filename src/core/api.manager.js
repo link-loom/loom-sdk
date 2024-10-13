@@ -135,6 +135,9 @@ class ApiManager {
   }
 
   #buildDocs() {
+    const baseModelPath = this._path.resolve(
+      require.resolve('@link-loom/sdk/src/core/utils/models/base.model.js')
+    );
     const options = {
       definition: {
         openapi: '3.0.0',
@@ -149,7 +152,7 @@ class ApiManager {
           },
         ],
       },
-      apis: ['src/routes/api/**/*.route.js', 'src/models/**/*.js'],
+      apis: ['src/routes/api/**/*.route.js', 'src/models/**/*.js', baseModelPath],
       customSiteTitle: 'Mi Swagger',
     };
 

@@ -76,6 +76,10 @@ npm run
 
 ## Documentation
 
+## Development
+
+> npm version patch;npm publish
+
 ### Service docs
 
 #### API Playground

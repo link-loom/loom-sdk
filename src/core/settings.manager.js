@@ -58,7 +58,7 @@ class SettingsManager {
   }
 
   listenServer() {
-    const port = this._utilities.sanitizer.port(this._config.SERVER.PORT);
+    const port = this._utilities.sanitizer.port(process.env.PORT || this._config.SERVER.PORT || 3500);
 
     if (!port) {
       this._console.error(

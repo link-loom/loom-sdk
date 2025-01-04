@@ -71,6 +71,23 @@ module.exports = {
       }
     }
   },
+  address: {
+    name: 'address',
+    default: {
+      street_address: '',
+      extended_address: '',
+      postal_code: '',
+      geographical_information: {
+        continent: '',
+        country: '',
+        city: '',
+        point: {
+          lat: 0,
+          lon: 0
+        }
+      }
+    }
+  },
   log: {
     name: 'log',
     default: {

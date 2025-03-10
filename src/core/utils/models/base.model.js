@@ -106,13 +106,13 @@ class ModelBase {
     this.created = new Property({
       value: args.created || {
         user: {},
-        timestamp: this.timestamp()
+        timestamp: this.timestamp
       }, type: this.types.log
     });
     this.modified = new Property({
       value: args.modified || {
         user: {},
-        timestamp: this.timestamp()
+        timestamp: this.timestamp
       }, type: this.types.log
     });
     this.deleted = new Property({ value: args.deleted, type: this.types.log });

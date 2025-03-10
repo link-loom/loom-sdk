@@ -115,7 +115,7 @@ class ModelBase {
         timestamp: this.timestamp
       }, type: this.types.log
     });
-    this.deleted = new Property({ value: args.deleted, type: this.types.nulleablelog });
+    this.deleted = new Property({ value: args.deleted, type: this.types.nullableLog });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });
 

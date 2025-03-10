@@ -94,5 +94,9 @@ module.exports = {
       user: { id: '' },
       timestamp: ''
     }
+  },
+  nullableLog: {
+    name: 'nullableLog',
+    default: null
   }
 };

@@ -37,7 +37,7 @@ class ModelBase {
 
   static defaultStatuses = {
     deleted: { id: -1, name: 'deleted', title: 'Deleted', color: '#d32f2f' },
-    inactive: { id: 0, name: 'inactive', title: 'Inactive',color: '#757575' },
+    inactive: { id: 0, name: 'inactive', title: 'Inactive', color: '#757575' },
     active: { id: 1, name: 'active', title: 'Active', color: '#2e7d32' },
     pending: { id: 2, name: 'pending', title: 'Pending', color: '#ed6c02' },
   };
@@ -103,8 +103,18 @@ class ModelBase {
 
     this.id = new Property({ value: args.id, type: this.types.string, isPK: true });
 
-    this.created = new Property({ value: args.created, type: this.types.log });
-    this.modified = new Property({ value: args.modified, type: this.types.log });
+    this.created = new Property({
+      value: args.created || {
+        user: {},
+        timestamp: this.timestamp()
+      }, type: this.types.log
+    });
+    this.modified = new Property({
+      value: args.modified || {
+        user: {},
+        timestamp: this.timestamp()
+      }, type: this.types.log
+    });
     this.deleted = new Property({ value: args.deleted, type: this.types.log });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });

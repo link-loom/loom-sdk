@@ -108,6 +108,9 @@ class ModelBase {
     this.deleted = new Property({ value: args.deleted, type: this.types.log });
 
     this.status = new Property({ value: args.status || statuses.active, type: this.types.object });
+
+    this.metadata = new Property({ value: args.metadata, type: this.types.object });
+    this.context_data = new Property({ value: args.metadata, type: this.types.object });
   }
 
   setBaseProperties(baseProperties) {
@@ -116,6 +119,8 @@ class ModelBase {
     this.modified = baseProperties.modified;
     this.deleted = baseProperties.deleted;
     this.status = baseProperties.status;
+    this.metadata = baseProperties.metadata;
+    this.context_data = baseProperties.context_data;
 
     return this;
   }

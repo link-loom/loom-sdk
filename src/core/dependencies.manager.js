@@ -89,6 +89,12 @@ class DependenciesManager {
 
       return this.#loadConfigFile(config);
     } catch (error) {
+      console.error(
+        ` ${this._dependencies.colors.green(
+          this._namespace,
+        )}:`,
+      );
+      console.log(error);
       return false;
     }
   }

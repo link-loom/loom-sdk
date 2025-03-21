@@ -161,10 +161,12 @@ class ServerManager {
 
   async #setupDatabase() {
     const { DatabaseManager } = require('./database.manager');
+    
     this._databaseManager = new DatabaseManager({
       dependencies: this._dependenciesManager.core.get(),
       dependencyInjector: this._dependenciesManager,
     });
+
     await this._databaseManager.setup();
 
     this._dependenciesManager.core.add(

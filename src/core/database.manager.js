@@ -19,7 +19,7 @@ class DatabaseManager {
     };
   }
 
-  setup() {
+  async setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
     this.#loadDataSources();
@@ -32,7 +32,7 @@ class DatabaseManager {
     }
 
     this.#getCurrentDataSource();
-    this.#setupSelectedDataSource();
+    await this.#setupSelectedDataSource();
 
     this._console.success('Loaded', { namespace: this._namespace });
   }
@@ -64,7 +64,7 @@ class DatabaseManager {
     }
   }
 
-  #setupSelectedDataSource() {
+  async #setupSelectedDataSource() {
     try {
       const DataSource = require(
         `${this._dependencies.root}/src/data-sources/${this._currentDataSourceConfig.path}`,
@@ -78,7 +78,7 @@ class DatabaseManager {
 
       this._db.transaction = new DataSource(this._dependencies);
 
-      this._db.transaction.setup();
+      await this._db.transaction.setup();
 
       this._console.success('Database manager loaded', {
         namespace: this._namespace,

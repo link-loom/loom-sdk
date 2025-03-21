@@ -159,13 +159,13 @@ class ServerManager {
     );
   }
 
-  #setupDatabase() {
+  async #setupDatabase() {
     const { DatabaseManager } = require('./database.manager');
     this._databaseManager = new DatabaseManager({
       dependencies: this._dependenciesManager.core.get(),
       dependencyInjector: this._dependenciesManager,
     });
-    this._databaseManager.setup();
+    await this._databaseManager.setup();
 
     this._dependenciesManager.core.add(
       this._databaseManager,

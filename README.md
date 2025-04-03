@@ -76,7 +76,7 @@ npm run
 
 ## Documentation
 
-## Development
+### Development
 
 > npm version patch;npm publish
 

@@ -148,6 +148,20 @@ class DependenciesManager {
         )}: Error loading Veripass configuration`,
       );
 
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls outside the range of 2xx
+        console.error('Status:', error.response.status);
+        console.error('Headers:', error.response.headers);
+        console.error('Data:', error.response.data);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('Request:', error.request);
+      } else {
+        // Something happened in setting up the request
+        console.error('Error Message:', error.message);
+      }
+
       return false;
     }
   }

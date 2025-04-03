@@ -78,7 +78,7 @@ npm run
 
 ### Development
 
-> npm version patch;npm publish
+> npm version patch && npm publish --otp=$(gum input --placeholder "Enter OTP code")
 
 ### Service docs
 

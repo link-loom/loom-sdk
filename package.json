@@ -27,7 +27,7 @@
     ],
     "dependencies": {
         "aes-js": "^3.1.2",
-        "axios": "^0.27.2",
+        "axios": "^1.8.4",
         "bcryptjs": "^2.4.3",
         "body-parser": "latest",
         "colors": "latest",
@@ -38,7 +38,7 @@
         "dotenv": "^16.3.1",
         "exceljs": "^3.3.1",
         "express": "latest",
-        "firebase-admin": "^11.2.0",
+        "firebase-admin": "^13.2.0",
         "helmet": "^3.21.2",
         "html-to-text": "^5.1.1",
         "jsonwebtoken": "latest",

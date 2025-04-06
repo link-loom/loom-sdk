@@ -58,6 +58,8 @@ class ServerManager {
 
       this.#setupEventConsumer();
 
+      this.#setupObservability();
+
       this.#setupServer();
 
       this.#serverLoadedTrigger();
@@ -161,7 +163,7 @@ class ServerManager {
 
   async #setupDatabase() {
     const { DatabaseManager } = require('./database.manager');
-    
+
     this._databaseManager = new DatabaseManager({
       dependencies: this._dependenciesManager.core.get(),
       dependencyInjector: this._dependenciesManager,
@@ -228,10 +230,7 @@ class ServerManager {
       this._dependenciesManager.core.get(),
     );
 
-    this._dependenciesManager.core.add(
-      this._functionsManager,
-      'FunctionsManager',
-    );
+    this._dependenciesManager.core.add(this._functionsManager, 'FunctionsManager');
     this._dependenciesManager.core.add(this._functionsManager, 'functions');
   }
 
@@ -243,14 +242,8 @@ class ServerManager {
 
     this._eventBrokerManager.setup();
 
-    this._dependenciesManager.core.add(
-      this._eventBrokerManager,
-      'BrokerManager',
-    );
-    this._dependenciesManager.core.add(
-      this._eventBrokerManager.webSocketServer,
-      'webSocketServer',
-    );
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'BrokerManager');
+    this._dependenciesManager.core.add(this._eventBrokerManager.webSocketServer, 'webSocketServer');
   }
 
   #setupEventProducer() {
@@ -261,10 +254,7 @@ class ServerManager {
 
     this._eventBrokerManager.setup();
 
-    this._dependenciesManager.core.add(
-      this._eventBrokerManager,
-      'ProducerManager',
-    );
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'ProducerManager');
   }
 
   #setupEventConsumer() {
@@ -274,10 +264,18 @@ class ServerManager {
     );
     this._eventBrokerManager.setup();
 
-    this._dependenciesManager.core.add(
-      this._eventBrokerManager,
-      'ConsumerManager',
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'ConsumerManager');
+  }
+
+  #setupObservability() {
+    const { ObservabilityManager } = require('./observability.manager');
+    this._observabilityManager = new ObservabilityManager(
+      this._dependenciesManager.core.get(),
     );
+    this._observabilityManager.setup();
+
+    this._dependenciesManager.core.add(this._observabilityManager, 'ObservabilityManager');
+    this._dependenciesManager.core.add(this._observabilityManager, 'observability');
   }
 
   #setupServer() {

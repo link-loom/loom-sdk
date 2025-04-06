@@ -128,7 +128,7 @@ class ServerManager {
   }
 
   #setupEventBus() {
-    const { BusManager } = require('./event-system/bus.manager');
+    const { BusManager } = require('../event-system/bus.manager');
     this._eventBusManager = new BusManager(
       this._dependenciesManager.core.get(),
     );
@@ -162,7 +162,7 @@ class ServerManager {
   }
 
   async #setupDatabase() {
-    const { DatabaseManager } = require('./database.manager');
+    const { DatabaseManager } = require('../behaviors/database.manager');
 
     this._databaseManager = new DatabaseManager({
       dependencies: this._dependenciesManager.core.get(),
@@ -180,7 +180,7 @@ class ServerManager {
   }
 
   #setupStorage() {
-    const { StorageManager } = require('./storage.manager');
+    const { StorageManager } = require('../behaviors/storage.manager');
     const _storageManager = new StorageManager({
       dependencies: this._dependenciesManager.core.get(),
       dependencyInjector: this._dependenciesManager,
@@ -192,7 +192,7 @@ class ServerManager {
   }
 
   async #setupPushNotifications() {
-    const { PushManager } = require('./push.manager');
+    const { PushManager } = require('../behaviors/push.manager');
     this._pushManager = new PushManager(this._dependenciesManager.core.get());
     await this._pushManager.setup();
 
@@ -225,7 +225,7 @@ class ServerManager {
   }
 
   #setupFunctions() {
-    const { FunctionsManager } = require('./functions.manager');
+    const { FunctionsManager } = require('../behaviors/functions.manager');
     this._functionsManager = new FunctionsManager(
       this._dependenciesManager.core.get(),
     );
@@ -235,7 +235,7 @@ class ServerManager {
   }
 
   #setupEventBroker() {
-    const { EventBrokerManager } = require('./event-system/broker.manager');
+    const { EventBrokerManager } = require('../event-system/broker.manager');
     this._eventBrokerManager = new EventBrokerManager(
       this._dependenciesManager.core.get(),
     );
@@ -247,7 +247,7 @@ class ServerManager {
   }
 
   #setupEventProducer() {
-    const { EventProducerManager } = require('./event-system/producer.manager');
+    const { EventProducerManager } = require('../event-system/producer.manager');
     this._eventBrokerManager = new EventProducerManager(
       this._dependenciesManager.core.get(),
     );
@@ -258,7 +258,7 @@ class ServerManager {
   }
 
   #setupEventConsumer() {
-    const { EventConsumerManager } = require('./event-system/consumer.manager');
+    const { EventConsumerManager } = require('../event-system/consumer.manager');
     this._eventBrokerManager = new EventConsumerManager(
       this._dependenciesManager.core.get(),
     );
@@ -268,7 +268,7 @@ class ServerManager {
   }
 
   #setupObservability() {
-    const { ObservabilityManager } = require('./observability.manager');
+    const { ObservabilityManager } = require('../behaviors/observability.manager');
     this._observabilityManager = new ObservabilityManager(
       this._dependenciesManager.core.get(),
     );

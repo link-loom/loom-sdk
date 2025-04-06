@@ -39,7 +39,7 @@ class ValidatorUtil {
     return new Promise((resolve, reject) => {
       this._jwt.verify(
         token,
-        this._dependencies.config.SERVER.SECRET,
+        this._dependencies.config?.server?.secret || '',
         (err, decoded) => {
           if (err) {
             return reject(err);
@@ -83,7 +83,7 @@ class ValidatorUtil {
       }
 
       const decipherToken = this._utilities.encoder.crypto.decipherObject(
-        this._config.SERVICES.API_MANAGER.SECRET,
+        this._config?.services?.apiManager?.secret || '',
         encryptedToken,
       );
 

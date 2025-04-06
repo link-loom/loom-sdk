@@ -1,12 +1,12 @@
-const EventUtil = require('./utils/event.util');
-const GeneratorUtil = require('./utils/generator.util');
-const CryptoUtil = require('./utils/crypto.util');
-const IOUtil = require('./utils/io.util');
-const LangUtil = require('./utils/lang.utils');
-const SanitizerUtil = require('./utils/sanitizer.util');
-const SearchUtil = require('./utils/search.util');
-const EncoderUtil = require('./utils/encoder.util');
-const ValidatorUtil = require('./utils/validator.util');
+const EventUtil = require('../utils/event.util');
+const GeneratorUtil = require('../utils/generator.util');
+const CryptoUtil = require('../utils/crypto.util');
+const IOUtil = require('../utils/io.util');
+const LangUtil = require('../utils/lang.utils');
+const SanitizerUtil = require('../utils/sanitizer.util');
+const SearchUtil = require('../utils/search.util');
+const EncoderUtil = require('../utils/encoder.util');
+const ValidatorUtil = require('../utils/validator.util');
 
 class UtilitiesManager {
   constructor(dependencies) {

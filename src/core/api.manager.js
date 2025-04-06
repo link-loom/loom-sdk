@@ -77,7 +77,7 @@ class ApiManager {
   #handleStorageConfig() {
     this._storage = this._multer({
       limits: {
-        fileSize: this._config?.STORAGESOURCE_CONFIG?.SETTINGS?.MAX_FILE_SIZE, // 5MB by default
+        fileSize: this._config?.behaviors?.storage?.settings?.maxFileSize, // 5MB by default
       },
       storage: this._multer.memoryStorage(),
     });
@@ -142,13 +142,13 @@ class ApiManager {
       definition: {
         openapi: '3.0.0',
         info: {
-          title: this._config.SERVER.NAME,
-          version: this._config.SERVER.VERSION,
+          title: this._config?.server?.name || 'Link Loom API',
+          version: this._config?.server?.version || '1.0.0',
         },
         servers: [
           {
-            url: `http://localhost:${this._config.SERVER.PORT}`,
-            description: this._config.SERVER.ID,
+            url: `http://localhost:${this._config?.server?.port || 8080}`,
+            description: this._config?.server?.id || '',
           },
         ],
       },
@@ -162,7 +162,7 @@ class ApiManager {
       '/open-api.playground',
       this._swaggerUi.serve,
       this._swaggerUi.setup(specs, {
-        customSiteTitle: `${this._config.SERVER.NAME} - ${this._config.SERVER.VERSION}`,
+        customSiteTitle: `${this._config?.server?.name} - ${this._config?.server?.version}`,
       }),
     );
     this._app.get('/open-api.json', (_, res) => {

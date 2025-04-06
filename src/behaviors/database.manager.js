@@ -24,7 +24,7 @@ class DatabaseManager {
 
     this.#loadDataSources();
 
-    if (!this._dependencies.config.SETTINGS.USE_DATABASE) {
+    if (!this._dependencies?.config?.behaviors?.database?.enabled) {
       this._console.info('Database is disabled', {
         namespace: this._namespace,
       });
@@ -50,7 +50,7 @@ class DatabaseManager {
   #getCurrentDataSource() {
     try {
       this._currentDataSourceName =
-        this._dependencies.config.SETTINGS.DATABASE_NAME || '';
+        this._dependencies?.config?.behaviors?.database?.default || '';
       this._currentDataSourceConfig = this._datasources.find(
         (dataSource) => dataSource.name === this._currentDataSourceName,
       );

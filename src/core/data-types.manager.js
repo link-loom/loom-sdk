@@ -15,7 +15,7 @@ class DataTypesManager {
   setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    this._dataTypes = require(`./utils/data-types/definition.types`);
+    this._dataTypes = require(`../utils/data-types/definition.types`);
 
     this._console.success('Loaded', { namespace: this._namespace });
   }

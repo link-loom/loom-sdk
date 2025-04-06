@@ -180,7 +180,7 @@ class DependenciesManager {
   }
 
   #importCustomDependencies() {
-    const dependencies = this._dependencies?.config?.CUSTOM_DEPENDENCIES || [];
+    const dependencies = this._dependencies?.config?.customDependencies || [];
 
     if (!dependencies || !dependencies.length) {
       return;

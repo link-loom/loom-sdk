@@ -24,15 +24,20 @@ class StorageManager {
 
     this.#loadStorageSources();
 
-    if (!this._dependencies.config.SETTINGS.USE_STORAGE) {
-      this._console.info('Storage is disabled', { namespace: this._namespace });
+    if (!this._dependencies?.config?.behaviors?.storage?.enabled) {
+      this._console.info('No storage behavior enabled', { namespace: this._namespace });
+      return;
+    }
+
+    if (!this._dependencies?.config?.behaviors?.storage?.default) {
+      this._console.error('No storage settings specified', { namespace: this._namespace });
       return;
     }
 
     this.#getCurrentStorageSource();
     this.#setupSelectedStorageSource();
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Storage behavior loaded', { namespace: this._namespace });
   }
 
   #loadStorageSources() {
@@ -48,7 +53,7 @@ class StorageManager {
   #getCurrentStorageSource() {
     try {
       this._currentStorageSourceName =
-        this._dependencies.config.SETTINGS.STORAGE_NAME || '';
+        this._dependencies?.config?.behaviors?.storage?.default || '';
       this._currentStorageSourceConfig = this._storageSources.find(
         (dataSource) => dataSource.name === this._currentStorageSourceName,
       );

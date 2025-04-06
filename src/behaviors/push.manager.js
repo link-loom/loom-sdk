@@ -14,12 +14,12 @@ class PushManager {
   async setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    if (!this._dependencies.config.SETTINGS.USE_PUSH) {
-      this._console.info('Manager is disabled', { namespace: this._namespace });
+    if (!this._dependencies?.config?.behaviors?.push?.enabled) {
+      this._console.info('Push Behavior is disabled', { namespace: this._namespace });
       return;
     }
 
-    switch (this._dependencies.config.SETTINGS.PUSH_NAME) {
+    switch (this._dependencies?.config?.behaviors?.push?.default) {
       case 'firebase':
         await this.firebaseConfig();
         break;

@@ -1,4 +1,4 @@
-class PushManager {
+class PushModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -43,4 +43,4 @@ class PushManager {
   }
 }
 
-module.exports = { PushManager };
+module.exports = { PushModule };

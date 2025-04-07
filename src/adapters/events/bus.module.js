@@ -1,4 +1,4 @@
-class EventBrokerManager {
+class BusModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -7,35 +7,30 @@ class EventBrokerManager {
 
     /* Custom Properties */
     this._events = this._dependencies.events;
-    this._socketModule = this._dependencies.socketModule;
-    this._httpServer = this._dependencies.httpServer;
 
     /* Assigments */
-    this._namespace = '[Server]::[Event System]::[Broker]';
-    this._webSocketServer = {};
+    this._namespace = '[Server]::[Event System]::[Bus]';
+    this._bus = {};
   }
 
   setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    if (!this._config?.behaviors?.eventSystem?.broker) {
+    if (!this._config?.settings?.eventSystem?.internalBusManager) {
       this._console.info('Manager is disabled', { namespace: this._namespace });
       return;
     }
 
-    // Listening and setup socket
-    this._webSocketServer = this._socketModule(this._httpServer, {
-      cors: {
-        origin: '*',
-      },
-    });
+    this._bus = new this._events.EventEmitter();
+
+    this._bus.emit('server::event-bus::loaded');
 
     this._console.success('Loaded', { namespace: this._namespace });
   }
 
-  get webSocketServer() {
-    return this._webSocketServer;
+  get bus() {
+    return this._bus;
   }
 }
 
-module.exports = { EventBrokerManager };
+module.exports = { BusModule };

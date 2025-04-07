@@ -1,4 +1,4 @@
-class ModelManager {
+class ModelModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -48,4 +48,4 @@ class ModelManager {
   }
 }
 
-module.exports = { ModelManager };
+module.exports = { ModelModule };

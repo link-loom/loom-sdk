@@ -1,4 +1,4 @@
-class SettingsManager {
+class SettingsModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -71,4 +71,4 @@ class SettingsManager {
   }
 }
 
-module.exports = { SettingsManager };
+module.exports = { SettingsModule };

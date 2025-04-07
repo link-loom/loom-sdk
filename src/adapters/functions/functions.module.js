@@ -1,4 +1,4 @@
-class FunctionsManager {
+class FunctionsModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -195,4 +195,4 @@ class FunctionsManager {
   }
 }
 
-module.exports = { FunctionsManager };
+module.exports = { FunctionsModule };

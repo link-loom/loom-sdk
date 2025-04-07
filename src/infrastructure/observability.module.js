@@ -1,4 +1,4 @@
-class ObservabilityManager {
+class ObservabilityModule {
   constructor(dependencies) {
     this._dependencies = dependencies;
     this._namespace = '[Observability]::[Behavior]';
@@ -53,4 +53,4 @@ class ObservabilityManager {
   }
 }
 
-module.exports = { ObservabilityManager };
+module.exports = { ObservabilityModule };

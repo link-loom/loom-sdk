@@ -1,4 +1,4 @@
-class ApiManager {
+class ApiModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -187,4 +187,4 @@ class ApiManager {
   }
 }
 
-module.exports = { ApiManager };
+module.exports = { ApiModule };

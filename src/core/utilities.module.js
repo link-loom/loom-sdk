@@ -8,7 +8,7 @@ const SearchUtil = require('../utils/search.util');
 const EncoderUtil = require('../utils/encoder.util');
 const ValidatorUtil = require('../utils/validator.util');
 
-class UtilitiesManager {
+class UtilitiesModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -71,4 +71,4 @@ class UtilitiesManager {
   }
 }
 
-module.exports = { UtilitiesManager };
+module.exports = { UtilitiesModule };

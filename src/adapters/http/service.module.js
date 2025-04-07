@@ -1,4 +1,4 @@
-class ServiceManager {
+class ServiceModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -27,4 +27,4 @@ class ServiceManager {
   }
 }
 
-module.exports = { ServiceManager };
+module.exports = { ServiceModule };

@@ -1,4 +1,4 @@
-class StorageManager {
+class StorageModule {
   constructor({ dependencies, dependencyInjector }) {
     /* Base Properties */
     this._dependencyInjector = dependencyInjector;
@@ -97,4 +97,4 @@ class StorageManager {
   }
 }
 
-module.exports = { StorageManager };
+module.exports = { StorageModule };

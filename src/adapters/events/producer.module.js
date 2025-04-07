@@ -1,4 +1,4 @@
-class EventConsumerManager {
+class EventProducerModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -13,53 +13,32 @@ class EventConsumerManager {
     /* Assigments */
     this._namespace = '[Server]::[Event System]::[Producer]';
     this._eventSystemDefinition = {};
-    this._consumer = {};
   }
 
   setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    this.#connectToBroker();
+    this.#registerEvents();
 
     this._console.success('Loaded', { namespace: this._namespace });
   }
 
-  async #connectToBroker() {
-    if (!this._config?.settings?.eventSystem?.listenConsumerEvents) {
+  #registerEvents() {
+    if (!this._config?.settings?.eventSystem?.listenProducerEvents) {
       this._console.info('Manager is disabled', { namespace: this._namespace });
       return;
     }
 
-    this._consumer = this._websocketClientModule.connect(
-      this._config?.services?.broker?.uri || '',
-      {
-        reconnect: true,
-      },
-    );
+    this._websocketServer.on('connection', (socket) => {
+      this._console.success(`[${socket.id}]: Consumer connected`, {
+        namespace: this._namespace,
+      });
 
-    this.#registerEvents();
-  }
-
-  #registerEvents() {
-    this._consumer.on('connect', (data) => {
-      this._console.success(
-        `connected to broker: ${this._config?.services?.broker?.uri || ''}`,
-        { namespace: this._namespace },
-      );
-      this._console.success(`id: ${this.id}`, { namespace: this._namespace });
-
-      this.#registerDynamicEvents({ consumer: this._consumer });
-    });
-
-    this._consumer.on('disconnect', () => {
-      this._console.success(
-        `disconnected from broker: ${this._config?.services?.broker?.uri || ''}`,
-        { namespace: this._namespace },
-      );
+      this.#registerDynamicEvents(socket);
     });
   }
 
-  #registerDynamicEvents({ consumer }) {
+  #registerDynamicEvents(consumer) {
     this._eventSystemDefinition = require(
       `${this._dependencies.root}/src/events/index`,
     );
@@ -67,10 +46,10 @@ class EventConsumerManager {
     this.#subscribeTopics({ consumer });
 
     // build each api routes
-    this._eventSystemDefinition.consumer.events.map((eventDefinition) => {
+    this._eventSystemDefinition.producer.events.map((eventDefinition) => {
       try {
         this._console.info(
-          `Initializing ${eventDefinition.name}${eventDefinition.command} event`,
+          `[${consumer.id}]: Initializing ${eventDefinition.name}${eventDefinition.command} event`,
           { namespace: this._namespace },
         );
 
@@ -97,15 +76,26 @@ class EventConsumerManager {
 
       return eventDefinition;
     });
+
+    consumer.on('disconnect', () => {
+      this._console.success(`Consumer disconnected ${consumer.id}`, {
+        namespace: this._namespace,
+      });
+    });
   }
 
   #subscribeTopics({ consumer }) {
-    this._console.success(`Subscribing to topics from ${consumer.id}`, {
+    this._console.success(`[${consumer.id}]: Subscribing to topics`, {
       namespace: this._namespace,
     });
 
     consumer.join(
-      this._eventSystemDefinition.broker.topics.map((topic) => topic.name),
+      this._eventSystemDefinition.producer.topics.map((topic) => topic.name),
+    );
+
+    this._console.success(
+      `[${consumer.id}]: Topics subscribed ${[...consumer.rooms].join(', ')}`,
+      { namespace: this._namespace },
     );
   }
 
@@ -148,22 +138,14 @@ class EventConsumerManager {
       return;
     }
 
-    this._eventSystemDefinition.consumer.events.find(
+    return this._eventSystemDefinition.producer.events.find(
       (event) => event.name === name,
     );
   }
 
   get definition() {
-    return this._eventSystemDefinition.producer;
-  }
-
-  get producer() {
-    return this._consumer;
-  }
-
-  get id() {
-    return this._consumer.id;
+    return this._eventSystemDefinition.broker;
   }
 }
 
-module.exports = { EventConsumerManager };
+module.exports = { EventProducerModule };

@@ -1,4 +1,4 @@
-class DependenciesManager {
+class DependenciesModule {
   constructor(args) {
     /* Base Properties */
     this._args = args;
@@ -229,4 +229,4 @@ class DependenciesManager {
   }
 }
 
-module.exports = { DependenciesManager };
+module.exports = { DependenciesModule };

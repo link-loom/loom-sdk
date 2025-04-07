@@ -1,4 +1,4 @@
-class DatabaseManager {
+class DatabaseModule {
   constructor({ dependencies, dependencyInjector }) {
     /* Base Properties */
     this._dependencyInjector = dependencyInjector;
@@ -93,4 +93,4 @@ class DatabaseManager {
   }
 }
 
-module.exports = { DatabaseManager };
+module.exports = { DatabaseModule };

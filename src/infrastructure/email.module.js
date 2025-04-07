@@ -1,4 +1,4 @@
-class EmailManager {
+class EmailModule {
   constructor(dependencies) {
     this._dependencies = dependencies;
     this._namespace = '[Email]::[Behavior]';
@@ -51,4 +51,4 @@ class EmailManager {
   }
 }
 
-module.exports = { ObservabilityManager: EmailManager };
+module.exports = { EmailModule };

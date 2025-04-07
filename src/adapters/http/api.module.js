@@ -136,7 +136,7 @@ class ApiModule {
 
   #buildDocs() {
     const baseModelPath = this._path.resolve(
-      require.resolve('@link-loom/sdk/src/core/utils/models/base.model.js')
+      require.resolve('@link-loom/sdk/src/utils/models/base.model.js')
     );
     const options = {
       definition: {
@@ -153,7 +153,7 @@ class ApiModule {
         ],
       },
       apis: ['src/routes/api/**/*.route.js', 'src/models/**/*.js', baseModelPath],
-      customSiteTitle: 'Mi Swagger',
+      customSiteTitle: this._config?.server?.name || 'Link Loom API',
     };
 
     const specs = this._swaggerJsdoc(options);

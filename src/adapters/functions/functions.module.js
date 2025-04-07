@@ -89,20 +89,20 @@ class FunctionsModule {
             'milliseconds',
           ) > 0
             ? /* Add the next ticket if has time remaining */
-              this._moment(`${functionDefinition.startAt}`, 'hh:mm:ss').diff(
-                this._moment(),
-                'milliseconds',
-              )
+            this._moment(`${functionDefinition.startAt}`, 'hh:mm:ss').diff(
+              this._moment(),
+              'milliseconds',
+            )
             : /* Add necesary time to next ticket */
-              this._moment(`${functionDefinition.startAt}`, 'HH:mm:ss')
-                .add(
-                  this._moment.duration(
-                    +`${functionDefinition.intervalTime}`,
-                    `${functionDefinition.intervalMeasure}`,
-                  ),
+            this._moment(`${functionDefinition.startAt}`, 'HH:mm:ss')
+              .add(
+                this._moment.duration(
+                  +`${functionDefinition.intervalTime}`,
                   `${functionDefinition.intervalMeasure}`,
-                )
-                .diff(this._moment(), 'milliseconds');
+                ),
+                `${functionDefinition.intervalMeasure}`,
+              )
+              .diff(this._moment(), 'milliseconds');
 
         /* Including in dependencies */
         this._functions.timed[functionName] = new Function(this._dependencies);
@@ -180,9 +180,11 @@ class FunctionsModule {
     if (definition.executionMode === 'atTime') {
       this._functions.startup[definition.name].run();
     } else {
-      this._dependencies.eventBus.bus.on('server::loaded', () => {
-        this._functions.startup[definition.name].run();
-      });
+      if (this._dependencies.eventBus?.bus) {
+        this._dependencies.eventBus?.bus?.on('server::loaded', () => {
+          this._functions.startup[definition.name].run();
+        });
+      }
     }
   }
 

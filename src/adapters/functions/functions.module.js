@@ -180,7 +180,7 @@ class FunctionsModule {
     if (definition.executionMode === 'atTime') {
       this._functions.startup[definition.name].run();
     } else {
-      if (this._dependencies.eventBus?.bus) {
+      if (this._dependencies.eventBus?.bus?.on) {
         this._dependencies.eventBus?.bus?.on('server::loaded', () => {
           this._functions.startup[definition.name].run();
         });

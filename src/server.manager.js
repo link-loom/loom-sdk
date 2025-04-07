@@ -26,43 +26,9 @@ class ServerManager {
     try {
       console.log(` ${this._namespace}: Loading`);
 
-      await this.#setupDependencies();
-
-      this.#setupConsole();
-
-      this.#setupUtilities();
-
-      this.#setupSettings();
-
-      this.#setupEventBus();
-
-      this.#setupDataTypes();
-
-      await this.#setupDatabase();
-
-      await this.#setupStorage();
-
-      await this.#setupPushNotifications();
-
-      this.#setupModels();
-
-      this.#setupServices();
-
-      this.#setupFunctions();
-
-      this.#setupApi();
-
-      this.#setupEventBroker();
-
-      this.#setupEventProducer();
-
-      this.#setupEventConsumer();
-
-      this.#setupObservability();
-
-      this.#setupServer();
-
-      this.#serverLoadedTrigger();
+      await this.#setupCoreModules();
+      await this.#setupInfrastructureModules();
+      await this.#setupAdapterModules();
 
       this._dependenciesManager.core
         .get()
@@ -75,8 +41,52 @@ class ServerManager {
     }
   }
 
+  async #setupCoreModules() {
+    await this.#setupDependencies();
+
+    this.#setupConsole();
+
+    this.#setupUtilities();
+
+    this.#setupSettings();
+
+    this.#setupDataTypes();
+  }
+
+  async #setupInfrastructureModules() {
+    await this.#setupDatabase();
+
+    await this.#setupStorage();
+
+    await this.#setupPushNotifications();
+
+    this.#setupObservability();
+  }
+
+  async #setupAdapterModules() {
+    this.#setupEventBus();
+
+    this.#setupModels();
+
+    this.#setupServices();
+
+    this.#setupFunctions();
+
+    this.#setupApi();
+
+    this.#setupEventBroker();
+
+    this.#setupEventProducer();
+
+    this.#setupEventConsumer();
+
+    this.#setupServer();
+
+    this.#serverLoadedTrigger();
+  }
+
   async #setupDependencies() {
-    const { DependenciesManager } = require('./dependencies.manager');
+    const { DependenciesManager } = require('./core/dependencies.manager');
     this._dependenciesManager = new DependenciesManager(this._args);
     const isSetupSuccessful = await this._dependenciesManager.setup();
 
@@ -91,7 +101,7 @@ class ServerManager {
   }
 
   #setupUtilities() {
-    const { UtilitiesManager } = require('./utilities.manager');
+    const { UtilitiesManager } = require('./core/utilities.manager');
     this._utilitiesManager = new UtilitiesManager(
       this._dependenciesManager.core.get(),
     );
@@ -105,7 +115,7 @@ class ServerManager {
   }
 
   #setupSettings() {
-    const { SettingsManager } = require('./settings.manager');
+    const { SettingsManager } = require('./core/settings.manager');
     this._settingsManager = new SettingsManager(
       this._dependenciesManager.core.get(),
     );
@@ -118,7 +128,7 @@ class ServerManager {
   }
 
   #setupConsole() {
-    const { ConsoleManager } = require('./console.manager');
+    const { ConsoleManager } = require('./core/console.manager');
     this._consoleManager = new ConsoleManager(
       this._dependenciesManager.core.get(),
     );
@@ -127,29 +137,8 @@ class ServerManager {
     this._dependenciesManager.core.add(this._consoleManager, 'console');
   }
 
-  #setupEventBus() {
-    const { BusManager } = require('../event-system/bus.manager');
-    this._eventBusManager = new BusManager(
-      this._dependenciesManager.core.get(),
-    );
-    this._eventBusManager.setup();
-
-    this._dependenciesManager.core.add(this._eventBusManager, 'eventBus');
-  }
-
-  #setupModels() {
-    const { ModelManager } = require('./model.manager');
-    this._modelsManager = new ModelManager(
-      this._dependenciesManager.core.get(),
-    );
-    this._modelsManager.setup();
-
-    this._dependenciesManager.core.add(this._modelsManager, 'ModelsManager');
-    this._dependenciesManager.core.add(this._modelsManager.models, 'models');
-  }
-
   async #setupDataTypes() {
-    const { DataTypesManager } = require('./data-types.manager');
+    const { DataTypesManager } = require('./core/data-types.manager');
     this._dataTypesManager = new DataTypesManager(
       this._dependenciesManager.core.get(),
     );
@@ -161,8 +150,94 @@ class ServerManager {
     );
   }
 
+  #setupEventBus() {
+    const { BusManager } = require('./adapters/events/bus.manager');
+    this._eventBusManager = new BusManager(
+      this._dependenciesManager.core.get(),
+    );
+    this._eventBusManager.setup();
+
+    this._dependenciesManager.core.add(this._eventBusManager, 'eventBus');
+  }
+
+  #setupServices() {
+    const { ServiceManager } = require('./adapters/http/service.manager');
+    this._serviceManager = new ServiceManager(
+      this._dependenciesManager.core.get(),
+    );
+    this._serviceManager.setup();
+
+    this._dependenciesManager.core.add(this._serviceManager, 'ServiceManager');
+    this._dependenciesManager.core.add(
+      this._serviceManager.services,
+      'services',
+    );
+  }
+
+  #setupApi() {
+    const { ApiManager } = require('./adapters/http/api.manager');
+    this._apiManager = new ApiManager(this._dependenciesManager.core.get());
+    this._apiManager.setup();
+
+    this._dependenciesManager.core.add(this._apiManager, 'ApiManager');
+  }
+
+  #setupFunctions() {
+    const { FunctionsManager } = require('./adapters/functions/functions.manager');
+    this._functionsManager = new FunctionsManager(
+      this._dependenciesManager.core.get(),
+    );
+
+    this._dependenciesManager.core.add(this._functionsManager, 'FunctionsManager');
+    this._dependenciesManager.core.add(this._functionsManager, 'functions');
+  }
+
+  #setupModels() {
+    const { ModelManager } = require('./adapters/http/model.manager');
+    this._modelsManager = new ModelManager(
+      this._dependenciesManager.core.get(),
+    );
+    this._modelsManager.setup();
+
+    this._dependenciesManager.core.add(this._modelsManager, 'ModelsManager');
+    this._dependenciesManager.core.add(this._modelsManager.models, 'models');
+  }
+
+  #setupEventBroker() {
+    const { EventBrokerManager } = require('./adapters/events/broker.manager');
+    this._eventBrokerManager = new EventBrokerManager(
+      this._dependenciesManager.core.get(),
+    );
+
+    this._eventBrokerManager.setup();
+
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'BrokerManager');
+    this._dependenciesManager.core.add(this._eventBrokerManager.webSocketServer, 'webSocketServer');
+  }
+
+  #setupEventProducer() {
+    const { EventProducerManager } = require('./adapters/events/producer.manager');
+    this._eventBrokerManager = new EventProducerManager(
+      this._dependenciesManager.core.get(),
+    );
+
+    this._eventBrokerManager.setup();
+
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'ProducerManager');
+  }
+
+  #setupEventConsumer() {
+    const { EventConsumerManager } = require('./adapters/events/consumer.manager');
+    this._eventBrokerManager = new EventConsumerManager(
+      this._dependenciesManager.core.get(),
+    );
+    this._eventBrokerManager.setup();
+
+    this._dependenciesManager.core.add(this._eventBrokerManager, 'ConsumerManager');
+  }
+
   async #setupDatabase() {
-    const { DatabaseManager } = require('../behaviors/database.manager');
+    const { DatabaseManager } = require('./infrastructure/database.manager');
 
     this._databaseManager = new DatabaseManager({
       dependencies: this._dependenciesManager.core.get(),
@@ -180,7 +255,7 @@ class ServerManager {
   }
 
   #setupStorage() {
-    const { StorageManager } = require('../behaviors/storage.manager');
+    const { StorageManager } = require('./infrastructure/storage.manager');
     const _storageManager = new StorageManager({
       dependencies: this._dependenciesManager.core.get(),
       dependencyInjector: this._dependenciesManager,
@@ -192,7 +267,7 @@ class ServerManager {
   }
 
   async #setupPushNotifications() {
-    const { PushManager } = require('../behaviors/push.manager');
+    const { PushManager } = require('./infrastructure/push.manager');
     this._pushManager = new PushManager(this._dependenciesManager.core.get());
     await this._pushManager.setup();
 
@@ -202,73 +277,8 @@ class ServerManager {
     );
   }
 
-  #setupServices() {
-    const { ServiceManager } = require('./service.manager');
-    this._serviceManager = new ServiceManager(
-      this._dependenciesManager.core.get(),
-    );
-    this._serviceManager.setup();
-
-    this._dependenciesManager.core.add(this._serviceManager, 'ServiceManager');
-    this._dependenciesManager.core.add(
-      this._serviceManager.services,
-      'services',
-    );
-  }
-
-  #setupApi() {
-    const { ApiManager } = require('./api.manager');
-    this._apiManager = new ApiManager(this._dependenciesManager.core.get());
-    this._apiManager.setup();
-
-    this._dependenciesManager.core.add(this._apiManager, 'ApiManager');
-  }
-
-  #setupFunctions() {
-    const { FunctionsManager } = require('../behaviors/functions.manager');
-    this._functionsManager = new FunctionsManager(
-      this._dependenciesManager.core.get(),
-    );
-
-    this._dependenciesManager.core.add(this._functionsManager, 'FunctionsManager');
-    this._dependenciesManager.core.add(this._functionsManager, 'functions');
-  }
-
-  #setupEventBroker() {
-    const { EventBrokerManager } = require('../event-system/broker.manager');
-    this._eventBrokerManager = new EventBrokerManager(
-      this._dependenciesManager.core.get(),
-    );
-
-    this._eventBrokerManager.setup();
-
-    this._dependenciesManager.core.add(this._eventBrokerManager, 'BrokerManager');
-    this._dependenciesManager.core.add(this._eventBrokerManager.webSocketServer, 'webSocketServer');
-  }
-
-  #setupEventProducer() {
-    const { EventProducerManager } = require('../event-system/producer.manager');
-    this._eventBrokerManager = new EventProducerManager(
-      this._dependenciesManager.core.get(),
-    );
-
-    this._eventBrokerManager.setup();
-
-    this._dependenciesManager.core.add(this._eventBrokerManager, 'ProducerManager');
-  }
-
-  #setupEventConsumer() {
-    const { EventConsumerManager } = require('../event-system/consumer.manager');
-    this._eventBrokerManager = new EventConsumerManager(
-      this._dependenciesManager.core.get(),
-    );
-    this._eventBrokerManager.setup();
-
-    this._dependenciesManager.core.add(this._eventBrokerManager, 'ConsumerManager');
-  }
-
   #setupObservability() {
-    const { ObservabilityManager } = require('../behaviors/observability.manager');
+    const { ObservabilityManager } = require('./infrastructure/observability.manager');
     this._observabilityManager = new ObservabilityManager(
       this._dependenciesManager.core.get(),
     );

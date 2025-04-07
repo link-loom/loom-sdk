@@ -16,8 +16,8 @@ class BusModule {
   setup() {
     this._console.success('Loading', { namespace: this._namespace });
 
-    if (!this._config?.settings?.eventSystem?.internalBusManager) {
-      this._console.info('Manager is disabled', { namespace: this._namespace });
+    if (!this._config?.settings?.eventSystem?.internalBusModule) {
+      this._console.info('Module is disabled', { namespace: this._namespace });
       return;
     }
 

@@ -11,7 +11,7 @@ class SettingsModule {
     this._httpServer = this._dependencies.httpServer;
 
     /* Assigments */
-    this._namespace = '[Server]::[Settings]::[Manager]';
+    this._namespace = '[Server]::[Settings]::[Module]';
   }
 
   setup() {

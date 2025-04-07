@@ -22,7 +22,7 @@ class SimpleProperty {
 
 class ComplexProperty {
   constructor({ value, model, type, dependencies }) {
-    const typeDef = dependencies.DataTypesManager.getType(type.name);
+    const typeDef = dependencies.DataTypesModule.getType(type.name);
 
     this._value = value ? new model(value, dependencies) : typeDef.default;
     this._type = type;
@@ -51,8 +51,8 @@ class Property {
     if (!dependencies) {
       return new SimpleProperty({ value, type });
     }
-    
-    var types = dependencies.DataTypesManager.types;
+
+    var types = dependencies.DataTypesModule.types;
     var typeModel = types[type.name];
     var complexType = types[type.name]?.default ?? {};
 

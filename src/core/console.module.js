@@ -1,4 +1,4 @@
-class ConsoleManager {
+class ConsoleModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -7,7 +7,7 @@ class ConsoleManager {
     this._colors = dependencies.colors;
 
     /* Assigments */
-    this._namespace = '[Server]::[Console]::[Manager]';
+    this._namespace = '[Server]::[Console]::[Module]';
   }
 
   setup() {
@@ -70,4 +70,4 @@ class ConsoleManager {
   }
 }
 
-module.exports = { ConsoleManager };
+module.exports = { ConsoleModule };

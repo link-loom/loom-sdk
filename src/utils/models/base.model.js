@@ -33,7 +33,7 @@ const { Property } = require('./property.model');
 class ModelBase {
   #dependencies;
   #utilities;
-  #dataTypesManager;
+  #dataTypesModule;
 
   static defaultStatuses = {
     deleted: { id: -1, name: 'deleted', title: 'Deleted', color: '#d32f2f' },
@@ -48,7 +48,7 @@ class ModelBase {
     }
     this.#dependencies = dependencies;
     this.#utilities = this.#dependencies.utilities;
-    this.#dataTypesManager = this.#dependencies.DataTypesManager;
+    this.#dataTypesModule = this.#dependencies.DataTypesModule;
   }
 
   get dependencies() {
@@ -60,7 +60,7 @@ class ModelBase {
   }
 
   get types() {
-    return this.#dataTypesManager.types;
+    return this.#dataTypesModule.types;
   }
 
   get timestamp() {

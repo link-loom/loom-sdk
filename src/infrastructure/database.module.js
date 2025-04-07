@@ -11,7 +11,7 @@ class DatabaseModule {
     this._currentDataSourceConfig = {};
 
     /* Assigments */
-    this._namespace = '[Server]::[Database]::[Manager]';
+    this._namespace = '[Server]::[Database]::[Module]';
     this._db = {
       transaction: {},
       driver: {},

@@ -13,7 +13,7 @@ class ApiModule {
     this._swaggerUi = dependencies.swaggerUi;
 
     /* Assigments */
-    this._namespace = '[Server]::[API]::[Manager]';
+    this._namespace = '[Server]::[API]::[Module]';
     this._apiRoutes = this._express.Router();
     this._path = dependencies.path;
     this._multer = dependencies.multerModule;

@@ -18,7 +18,7 @@ class UtilitiesModule {
     this._dependencies.utilities = this;
 
     /* Assigments */
-    this._namespace = '[Server]::[Utilities]::[Manager]';
+    this._namespace = '[Server]::[Utilities]::[Module]';
     this._validatorUtil = new ValidatorUtil(this._dependencies);
     this._eventUtil = new EventUtil(this._dependencies);
     this._generatorUtil = new GeneratorUtil(this._dependencies);

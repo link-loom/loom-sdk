@@ -7,7 +7,7 @@ class DependenciesModule {
     this._dependencies = this._args;
 
     /* Assigments */
-    this._namespace = '[Server]::[Dependencies]::[Manager]';
+    this._namespace = '[Server]::[Dependencies]::[Module]';
   }
 
   async setup() {
@@ -193,8 +193,7 @@ class DependenciesModule {
     );
     dependencies.map((customDependency) => {
       console.log(
-        ` ${this._dependencies.colors.cyan(this._namespace)}: Loading ${
-          customDependency.name
+        ` ${this._dependencies.colors.cyan(this._namespace)}: Loading ${customDependency.name
         } dependency`,
       );
       this._dependencies[customDependency.name] = require(

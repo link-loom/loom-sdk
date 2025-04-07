@@ -5,10 +5,10 @@ class ModelModule {
     this._console = dependencies.console;
 
     /* Custom Properties */
-    this._dataTypesManager = this._dependencies.DataTypesManager;
+    this._dataTypesModule = this._dependencies.DataTypesModule;
 
     /* Assigments */
-    this._namespace = '[Server]::[Model]::[Manager]';
+    this._namespace = '[Server]::[Model]::[Module]';
   }
 
   setup() {
@@ -35,7 +35,7 @@ class ModelModule {
         defaultInstance = {}; // Assigns an empty object if there is an error
       }
 
-      this._dataTypesManager.registerType({
+      this._dataTypesModule.registerType({
         name: modelName,
         instance: defaultInstance,
       });

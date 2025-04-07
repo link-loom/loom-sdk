@@ -7,7 +7,7 @@ class PushModule {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Push]::[Manager]';
+    this._namespace = '[Server]::[Push]::[Module]';
     this._push = {};
   }
 

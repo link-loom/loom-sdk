@@ -25,7 +25,7 @@ class EventProducerModule {
 
   #registerEvents() {
     if (!this._config?.settings?.eventSystem?.listenProducerEvents) {
-      this._console.info('Manager is disabled', { namespace: this._namespace });
+      this._console.info('Module is disabled', { namespace: this._namespace });
       return;
     }
 

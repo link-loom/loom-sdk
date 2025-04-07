@@ -11,7 +11,7 @@ class StorageModule {
     this._currentStorageSourceConfig = {};
 
     /* Assigments */
-    this._namespace = '[Server]::[Storage]::[Manager]';
+    this._namespace = '[Server]::[Storage]::[Module]';
     this._storage = {};
     this._stg = {
       operation: {},
@@ -75,7 +75,7 @@ class StorageModule {
 
       this._stg.driver =
         this._dependencies[
-          this._currentStorageSourceConfig.customDependencyName
+        this._currentStorageSourceConfig.customDependencyName
         ];
 
       this._dependencyInjector.core.add(this._stg, 'storage');

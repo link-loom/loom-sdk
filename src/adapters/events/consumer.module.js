@@ -26,7 +26,7 @@ class EventConsumerModule {
 
   async #connectToBroker() {
     if (!this._config?.settings?.eventSystem?.listenConsumerEvents) {
-      this._console.info('Manager is disabled', { namespace: this._namespace });
+      this._console.info('Module is disabled', { namespace: this._namespace });
       return;
     }
 

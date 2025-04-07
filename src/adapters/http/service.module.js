@@ -7,7 +7,7 @@ class ServiceModule {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Service]::[Manager]';
+    this._namespace = '[Server]::[Service]::[Module]';
   }
 
   setup() {

@@ -1,4 +1,4 @@
-class DataTypesManager {
+class DataTypesModule {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -7,7 +7,7 @@ class DataTypesManager {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Data-Types]::[Manager]';
+    this._namespace = '[Server]::[Data-Types]::[Module]';
     this._dataTypes = {};
     this._dynamicTypes = {};
   }
@@ -36,4 +36,4 @@ class DataTypesManager {
   }
 }
 
-module.exports = { DataTypesManager };
+module.exports = { DataTypesModule };

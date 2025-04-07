@@ -19,7 +19,7 @@ class EventBrokerModule {
     this._console.success('Loading', { namespace: this._namespace });
 
     if (!this._config?.behaviors?.eventSystem?.broker) {
-      this._console.info('Manager is disabled', { namespace: this._namespace });
+      this._console.info('Module is disabled', { namespace: this._namespace });
       return;
     }
 

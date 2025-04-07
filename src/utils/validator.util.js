@@ -83,7 +83,7 @@ class ValidatorUtil {
       }
 
       const decipherToken = this._utilities.encoder.crypto.decipherObject(
-        this._config?.services?.apiManager?.secret || '',
+        this._config?.services?.apiModule?.secret || '',
         encryptedToken,
       );
 

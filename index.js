@@ -1,9 +1,9 @@
-const { ServerManager } = require('./src/core/server.manager');
-const BaseModel = require('./src/core/utils/models/base.model');
-const { Property } = require('./src/core/utils/models/property.model');
+const { Loom } = require('./src/loom.sdk');
+const BaseModel = require('./src/utils/models/base.model');
+const { Property } = require('./src/utils/models/property.model');
 
 module.exports = {
-  ServerManager,
+  Loom,
   BaseModel,
   Property
 };

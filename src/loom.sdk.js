@@ -279,9 +279,10 @@ class Loom {
 
   #setupObservability() {
     const { ObservabilityModule } = require('./infrastructure/observability.module');
-    this._observabilityModule = new ObservabilityModule(
-      this._dependenciesModule.core.get(),
-    );
+    this._observabilityModule = new ObservabilityModule({
+      dependencies: this._dependenciesModule.core.get(),
+      dependencyInjector: this._dependenciesModule,
+    });
     this._observabilityModule.setup();
 
     this._dependenciesModule.core.add(this._observabilityModule, 'ObservabilityModule');

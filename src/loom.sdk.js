@@ -293,7 +293,11 @@ class Loom {
   }
 
   #serverLoadedTrigger() {
-    this._dependenciesModule.core.get().eventBus.bus.emit('server::loaded');
+    const dependencies = this._dependenciesModule.core.get() || {};
+
+    if (dependencies && dependencies?.eventBus?.bus?.emit) {
+      dependencies?.eventBus?.bus?.emit('server::loaded');
+    }
   }
 
   get settings() {

@@ -14,7 +14,7 @@ class ApiModule {
 
     /* Assigments */
     this._namespace = '[Server]::[API]::[Module]';
-    this._apiRoutes = this._express.Router();
+    this._router = this._express.Router();
     this._path = dependencies.path;
     this._multer = dependencies.multerModule;
     this._storage = {};
@@ -71,7 +71,7 @@ class ApiModule {
     middlewares.push(routeHandler);
 
     // Register the route with all its middleware.
-    this._apiRoutes[method](routePath, ...middlewares);
+    this._router[method](routePath, ...middlewares);
   }
 
   #handleStorageConfig() {
@@ -131,7 +131,7 @@ class ApiModule {
     }
 
     // All API Rest endpoints are part of the root
-    this._app.use('/', this._apiRoutes);
+    this._app.use('/', this._router);
   }
 
   #buildDocs() {
@@ -177,7 +177,7 @@ class ApiModule {
     this.#buildApiEndpoints();
 
     // Something else route response a 404 error
-    this._apiRoutes.get('*', (_req, res) => {
+    this._router.get('{*splat}', (_req, res) => {
       res
         .status(404)
         .send(

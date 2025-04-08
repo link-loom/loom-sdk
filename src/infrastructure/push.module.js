@@ -15,7 +15,7 @@ class PushModule {
     this._console.success('Loading', { namespace: this._namespace });
 
     if (!this._dependencies?.config?.behaviors?.push?.enabled) {
-      this._console.info('Push Behavior is disabled', { namespace: this._namespace });
+      this._console.info('Push Module is disabled', { namespace: this._namespace });
       return;
     }
 

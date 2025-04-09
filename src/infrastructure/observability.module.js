@@ -65,7 +65,7 @@ class ObservabilityModule {
         return;
       }
 
-      const AdapterClass = require(`./observability-adapters/${adapterName}.adapter`);
+      const AdapterClass = require(`${this._dependencies.root}/src/adapters/observability/${adapterName}/${adapterName}.adapter`);
       const adapterInstance = new AdapterClass(this._dependencies, observabilityBehavior);
 
       const driver = await adapterInstance.setup?.({ settings });
@@ -75,6 +75,7 @@ class ObservabilityModule {
       return driver;
     } catch (error) {
       this._console?.error?.(`Failed to load observability adapter "${adapterName}"`, { namespace: this._namespace });
+      console.error(error);
     }
   }
 

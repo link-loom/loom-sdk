@@ -19,7 +19,7 @@ class Loom {
     this._functionsModule = {};
     this._eventBrokerModule = {};
     this._eventBrokerModule = {};
-    this._namespace = '[Loom]::[Module]';
+    this._namespace = '[Loom]';
   }
 
   async ignite() {
@@ -246,10 +246,7 @@ class Loom {
 
     await this._databaseModule.setup();
 
-    this._dependenciesModule.core.add(
-      this._databaseModule,
-      'DatabaseModule',
-    );
+    this._dependenciesModule.core.add(this._databaseModule, 'DatabaseModule');
 
     return this._databaseModule;
   }
@@ -286,7 +283,6 @@ class Loom {
     this._observabilityModule.setup();
 
     this._dependenciesModule.core.add(this._observabilityModule, 'ObservabilityModule');
-    this._dependenciesModule.core.add(this._observabilityModule, 'observability');
   }
 
   #setupServer() {
@@ -296,7 +292,7 @@ class Loom {
   #serverLoadedTrigger() {
     const dependencies = this._dependenciesModule.core.get() || {};
 
-    if (dependencies && dependencies?.eventBus?.bus?.emit) {
+    if (dependencies?.eventBus?.bus?.emit) {
       dependencies?.eventBus?.bus?.emit('server::loaded');
     }
   }

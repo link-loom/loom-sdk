@@ -4,59 +4,82 @@ class ObservabilityModule {
     this._dependencyInjector = dependencyInjector;
     this._dependencies = dependencies;
     this._console = dependencies.console;
+    this._modules = this._dependencies?.config?.modules || {};
 
     /* Custom Properties */
-    this._modules = this._dependencies.config?.behaviors;
     this._observabilityModule = this._modules?.observability || {};
-    this._observabilityAdapter = null;
+    this._defaultAdapter = null;
 
     /* Assigments */
-    this._namespace = '[Observability]::[Module]';
+    this._namespace = '[Loom]::[Observability]::[Module]';
   }
 
   async setup() {
+    this._console.success('Loading module', { namespace: this._namespace });
+
     if (!this._observabilityModule?.enabled) {
-      this._console.info('Observability module is disabled', {
-        namespace: this._namespace,
-      });
+      this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    await this.#setupAdapter();
+    if (!this._observabilityModule?.default) {
+      this._console.error('No module default', { namespace: this._namespace });
+      return;
+    }
+
+    if (!this._observabilityModule?.provider) {
+      this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
+      return;
+    }
+
+    this.#loadAdapters();
+    await this.#setupDefaultAdapter();
+
+    this._console.success('Module Loaded', { namespace: this._namespace });
   }
 
-  async #setupAdapter() {
+  #loadAdapters() {
     try {
-      const observabilityProviderDefault = this._observabilityModule?.default || '';
-      const observabilityProviders = observabilityBehavior?.providers || {};
-      const observabilityProvider = observabilityProviders[observabilityProviderDefault] || {};
+      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/observability/index`);
+    } catch (error) {
+      this._console.error(error, { namespace: this._namespace });
+    }
+  }
 
-      if (!observabilityProvider?.settings) {
+  async #setupDefaultAdapter() {
+    this._adapterName = this._observabilityModule?.default || '';
+    this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
+
+    this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
+
+    this._defaultAdapter = await this.loadAdapter({
+      adapterName: this._adapterName,
+      settings: this._adapterSettings,
+    });
+  }
+
+  async loadAdapter({ adapterName, settings }) {
+    try {
+      if (!this._adapterSettings) {
         this._console?.error?.('No observability settings specified', { namespace: this._namespace });
         return;
       }
 
-      const ObservabilityProvider = require(`./observability-adapters/${observabilityProvider}.adapter`).default;
-      this._observabilityAdapter = new ObservabilityProvider(this._dependencies, observabilityBehavior);
-      await this._observabilityAdapter.setup?.();
+      const AdapterClass = require(`./observability-adapters/${adapterName}.adapter`);
+      const adapterInstance = new AdapterClass(this._dependencies, observabilityBehavior);
 
-      this._console?.success('Observability behavior loaded', { namespace: this._namespace });
-    } catch (err) {
-      this._console?.error?.(`Failed to load observability provider "${provider}"`, { namespace: this._namespace });
+      const driver = await adapterInstance.setup?.({ settings });
+
+      this._console?.success('Observability module loaded', { namespace: this._namespace });
+
+      return driver;
+    } catch (error) {
+      this._console?.error?.(`Failed to load observability adapter "${adapterName}"`, { namespace: this._namespace });
     }
   }
 
   get client() {
-    return this._observabilityAdapter || {};
-  }
-
-  async capture(event) {
-    this._console?.info?.(`Capturing event ${event?.title ?? event?.description ?? '...'}`, { namespace: this._namespace });
-    return this._observabilityAdapter?.capture?.(event);
-  }
-
-  isEnabled() {
-    return !!this._observabilityAdapter;
+    return this._defaultAdapter || {};
   }
 }
 

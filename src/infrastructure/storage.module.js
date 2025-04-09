@@ -4,11 +4,13 @@ class StorageModule {
     this._dependencyInjector = dependencyInjector;
     this._dependencies = dependencies;
     this._console = dependencies.console;
+    this._modules = this._dependencies?.config?.modules || {};
 
     /* Custom Properties */
-    this._storageSources = [];
-    this._currentStorageSourceName = '';
-    this._currentStorageSourceConfig = {};
+    this._storageModule = this._modules?.storage || {};
+    this._moduleAdapters = [];
+    this._adapterName = '';
+    this._adapterSettings = {};
 
     /* Assigments */
     this._namespace = '[Loom]::[Storage]::[Module]';
@@ -20,48 +22,46 @@ class StorageModule {
   }
 
   async setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
-    this.#loadStorageSources();
-
-    if (!this._dependencies?.config?.behaviors?.storage?.enabled) {
-      this._console.info('No storage behavior enabled', { namespace: this._namespace });
+    if (!this._storageModule?.enabled) {
+      this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._dependencies?.config?.behaviors?.storage?.default) {
-      this._console.error('No storage settings specified', { namespace: this._namespace });
+    if (!this._storageModule?.default) {
+      this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    this.#getCurrentStorageSource();
+    if (!this._storageModule?.provider) {
+      this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
+      return;
+    }
+
+    this.#loadAdapters();
+    this.#getAdapterSettings();
     this.#setupSelectedStorageSource();
 
-    this._console.success('Storage behavior loaded', { namespace: this._namespace });
+    this._console.success('Storage module loaded', { namespace: this._namespace });
   }
 
-  #loadStorageSources() {
+  #loadAdapters() {
     try {
-      this._storageSources = require(
-        `${this._dependencies.root}/src/storage-source/index`,
-      );
+      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/storage-source/index`);
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  #getCurrentStorageSource() {
+  #getAdapterSettings() {
     try {
-      this._currentStorageSourceName =
-        this._dependencies?.config?.behaviors?.storage?.default || '';
-      this._currentStorageSourceConfig = this._storageSources.find(
-        (dataSource) => dataSource.name === this._currentStorageSourceName,
+      this._adapterName = this._storageModule?.default || '';
+      this._adapterSettings = this._moduleAdapters.find(
+        (dataSource) => dataSource.name === this._adapterName,
       );
 
-      this._console.success(
-        `Current Storage Source: ${this._currentStorageSourceName}`,
-        { namespace: this._namespace },
-      );
+      this._console.success(`Adapter: ${this._adapterName}`,{ namespace: this._namespace });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
@@ -70,12 +70,12 @@ class StorageModule {
   #setupSelectedStorageSource() {
     try {
       const DataSource = require(
-        `${this._dependencies.root}/src/storage-source/${this._currentStorageSourceConfig.path}`,
+        `${this._dependencies.root}/src/storage-source/${this._adapterSettings.path}`,
       );
 
       this._stg.driver =
         this._dependencies[
-        this._currentStorageSourceConfig.customDependencyName
+        this._adapterSettings.customDependencyName
         ];
 
       this._dependencyInjector.core.add(this._stg, 'storage');

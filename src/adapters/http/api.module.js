@@ -77,7 +77,7 @@ class ApiModule {
   #handleStorageConfig() {
     this._storage = this._multer({
       limits: {
-        fileSize: this._config?.behaviors?.storage?.settings?.maxFileSize, // 5MB by default
+        fileSize: this._config?.modules?.storage?.settings?.maxFileSize, // 5MB by default
       },
       storage: this._multer.memoryStorage(),
     });

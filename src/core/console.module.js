@@ -46,7 +46,7 @@ class ConsoleModule {
     const { title, namespace } = args;
 
     console.log(
-      ` ${this._colors.red(`${title || namespace || ''}[ERROR]`)}: `,
+      ` ${this._colors.red(`${title || namespace || ''}[ERROR]`)}:`,
       body,
     );
   }
@@ -54,19 +54,19 @@ class ConsoleModule {
   info(body, args = {}) {
     const { title, namespace } = args;
 
-    console.log(` ${this._colors.cyan(title || namespace || '')}: `, body);
+    console.log(` ${this._colors.cyan(title || namespace || '')}:`, body);
   }
 
   warning(body, args = {}) {
     const { title, namespace } = args;
 
-    console.log(` ${this._colors.yellow(title || namespace || '')}: `, body);
+    console.log(` ${this._colors.yellow(title || namespace || '')}:`, body);
   }
 
   success(body, args = {}) {
     const { title, namespace } = args;
 
-    console.log(` ${this._colors.green(title || namespace || '')}: `, body);
+    console.log(` ${this._colors.green(title || namespace || '')}:`, body);
   }
 }
 

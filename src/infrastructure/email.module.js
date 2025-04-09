@@ -1,53 +1,85 @@
 class EmailModule {
-  constructor(dependencies) {
+  constructor({ dependencies, dependencyInjector }) {
+    /* Base Properties */
+    this._dependencyInjector = dependencyInjector;
     this._dependencies = dependencies;
-    this._namespace = '[Email]::[Behavior]';
-    this._behaviors = this._dependencies.config?.behaviors;
+    this._console = dependencies.console;
+    this._modules = this._dependencies?.config?.modules || {};
+
+    /* Custom Properties */
+    this._emailModule = this._modules?.email || {};
     this._emailAdapter = null;
+
+    /* Assigments */
+    this._namespace = '[Loom]::[Email]::[Behavior]';
   }
 
   async setup() {
-    if (!this._behaviors?.email || !this._behaviors?.email?.enabled) {
-      this._console.info('Email is disabled', {
-        namespace: this._namespace,
-      });
+    this._console.success('Loading module', { namespace: this._namespace });
+
+    if (!this._emailModule?.enabled) {
+      this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    await this.#setupAdapter();
+    if (!this._emailModule?.default) {
+      this._console.error('No module default', { namespace: this._namespace });
+      return;
+    }
+
+    if (!this._emailModule?.provider) {
+      this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
+      return;
+    }
+
+    this.#loadAdapters();
+    await this.#setupDefaultAdapter();
+
+    this._console.success('Module Loaded', { namespace: this._namespace });
   }
 
-  async #setupAdapter() {
-    const observabilityBehaviorDefault = this._behaviors?.email || {};
-    const observabilityProvider = this._behaviors?.email?.provider || '';
-
-    if (!observabilityBehavior.enabled) {
-      this._dependencies.console?.info?.('No email behavior enabled', { namespace: this._namespace });
-      return;
-    }
-
-    if (!observabilityProvider) {
-      this._dependencies.console?.error?.('No email settings specified', { namespace: this._namespace });
-      return;
-    }
-
+  #loadAdapters() {
     try {
-      const ObservabilityProvider = require(`./email-adapters/${observabilityProvider}.adapter`).default;
-      this._emailAdapter = new ObservabilityProvider(this._dependencies, observabilityBehavior);
-      await this._emailAdapter.setup?.();
+      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/email/index`);
+    } catch (error) {
+      this._console.error(error, { namespace: this._namespace });
+    }
+  }
 
-      this._console.success('Email behavior loaded', { namespace: this._namespace });
-    } catch (err) {
-      this._dependencies.console?.error?.(`Failed to load email provider "${provider}"`, { namespace: this._namespace });
+  async #setupDefaultAdapter() {
+    this._adapterName = this._observabilityModule?.default || '';
+    this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
+
+    this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
+
+    this._defaultAdapter = await this.loadAdapter({
+      adapterName: this._adapterName,
+      settings: this._adapterSettings,
+    });
+  }
+
+  async loadAdapter({ adapterName, settings }) {
+    try {
+      if (!this._adapterSettings) {
+        this._console?.error?.('No observability settings specified', { namespace: this._namespace });
+        return;
+      }
+
+      const AdapterClass = require(`./observability-adapters/${adapterName}.adapter`);
+      const adapterInstance = new AdapterClass(this._dependencies, observabilityBehavior);
+
+      const driver = await adapterInstance.setup?.({ settings });
+
+      this._console?.success('Observability module loaded', { namespace: this._namespace });
+
+      return driver;
+    } catch (error) {
+      this._console?.error?.(`Failed to load observability adapter "${adapterName}"`, { namespace: this._namespace });
     }
   }
 
   get client() {
-    return this._emailAdapter || {};
-  }
-
-  isEnabled() {
-    return !!this._emailAdapter;
+    return this._defaultAdapter || {};
   }
 }
 

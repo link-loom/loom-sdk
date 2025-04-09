@@ -11,9 +11,9 @@ class ConsoleModule {
   }
 
   setup() {
-    this.success('Loading', { namespace: this._namespace });
+    this.success('Loading module', { namespace: this._namespace });
 
-    this.success('Loaded', { namespace: this._namespace });
+    this.success('Module loaded', { namespace: this._namespace });
   }
 
   code(body, args = {}) {

@@ -35,7 +35,7 @@ class EmailModule {
     this.#loadAdapters();
     await this.#setupDefaultAdapter();
 
-    this._console.success('Module Loaded', { namespace: this._namespace });
+    this._console.success('Module Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {
@@ -47,7 +47,7 @@ class EmailModule {
   }
 
   async #setupDefaultAdapter() {
-    this._adapterName = this._observabilityModule?.default || '';
+    this._adapterName = this._emailModule?.default || '';
     this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
 
     this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
@@ -61,7 +61,7 @@ class EmailModule {
   async loadAdapter({ adapterName, settings }) {
     try {
       if (!this._adapterSettings) {
-        this._console?.error?.('No observability settings specified', { namespace: this._namespace });
+        this._console?.error?.('No email settings specified', { namespace: this._namespace });
         return;
       }
 
@@ -70,11 +70,11 @@ class EmailModule {
 
       const driver = await adapterInstance.setup?.({ settings });
 
-      this._console?.success('Observability module loaded', { namespace: this._namespace });
+      this._console?.success('Module loaded', { namespace: this._namespace });
 
       return driver;
     } catch (error) {
-      this._console?.error?.(`Failed to load observability adapter "${adapterName}"`, { namespace: this._namespace });
+      this._console?.error?.(`Failed to load email adapter "${adapterName}"`, { namespace: this._namespace });
     }
   }
 

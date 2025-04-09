@@ -44,7 +44,7 @@ class DatabaseModule {
 
     await this.#setupSelectedDataSource();
 
-    this._console.success('Module Loaded', { namespace: this._namespace });
+    this._console.success('Module Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {

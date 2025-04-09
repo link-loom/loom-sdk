@@ -30,9 +30,7 @@ class Loom {
       await this.#setupInfrastructureModules();
       await this.#setupAdapterModules();
 
-      this._dependenciesModule.core
-        .get()
-        .console.success('Loaded', { namespace: this._namespace });
+      this._dependenciesModule.core.get().console.success('Engine loaded', { namespace: this._namespace });
 
       return this._dependenciesModule.core.get();
     } catch (error) {

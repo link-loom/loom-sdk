@@ -35,7 +35,7 @@ class ObservabilityModule {
     this.#loadAdapters();
     await this.#setupDefaultAdapter();
 
-    this._console.success('Module Loaded', { namespace: this._namespace });
+    this._console.success('Module Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {
@@ -70,7 +70,7 @@ class ObservabilityModule {
 
       const driver = await adapterInstance.setup?.({ settings });
 
-      this._console?.success('Observability module loaded', { namespace: this._namespace });
+      this._console?.success('Module loaded', { namespace: this._namespace });
 
       return driver;
     } catch (error) {

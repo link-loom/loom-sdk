@@ -19,13 +19,13 @@ class FunctionsModule {
       startup: {},
     };
 
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     this.#createCache();
     this.#createTimed();
     this.#createStartup();
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   #createCache() {

@@ -41,7 +41,7 @@ class PushModule {
         break;
     }
 
-    this._console.success('Module Loaded', { namespace: this._namespace });
+    this._console.success('Module Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {
@@ -59,7 +59,7 @@ class PushModule {
         (dataSource) => dataSource.name === this._adapterName,
       );
 
-      this._console.success(`Adapter: ${this._adapterName}`,{ namespace: this._namespace });
+      this._console.success(`Adapter: ${this._adapterName}`, { namespace: this._namespace });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }

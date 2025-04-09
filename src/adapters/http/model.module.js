@@ -12,12 +12,12 @@ class ModelModule {
   }
 
   setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     this._models = require(`${this._dependencies.root}/src/models/index`);
     this.#registerModelsAsTypes();
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   // Registers all models as types, assigns an empty object on instantiation failure

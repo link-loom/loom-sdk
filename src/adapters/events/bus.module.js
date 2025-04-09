@@ -14,7 +14,7 @@ class BusModule {
   }
 
   setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     if (!this._config?.settings?.eventSystem?.internalBusModule) {
       this._console.info('Module is disabled', { namespace: this._namespace });
@@ -25,7 +25,7 @@ class BusModule {
 
     this._bus.emit('server::event-bus::loaded');
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   get bus() {

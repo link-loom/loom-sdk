@@ -16,11 +16,11 @@ class EventProducerModule {
   }
 
   setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     this.#registerEvents();
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   #registerEvents() {

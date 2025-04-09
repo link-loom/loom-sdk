@@ -13,11 +13,11 @@ class DataTypesModule {
   }
 
   setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     this._dataTypes = require(`../utils/data-types/definition.types`);
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   registerType({ name, instance = {} }) {

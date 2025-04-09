@@ -11,11 +11,11 @@ class ServiceModule {
   }
 
   setup() {
-    this._console.success('Loading', { namespace: this._namespace });
+    this._console.success('Loading module', { namespace: this._namespace });
 
     this.#loadServices();
 
-    this._console.success('Loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   #loadServices() {

@@ -8,7 +8,7 @@ class EncoderUtil {
     this._aesjs = this._dependencies.aesjs;
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Serializer]';
+    this._namespace = '[Loom]::[Utils]::[Serializer]';
   }
 
   #serializerOjectToQueryString(obj, prefix) {

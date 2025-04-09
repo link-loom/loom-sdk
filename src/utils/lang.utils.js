@@ -6,7 +6,7 @@ class LangUtil {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Language]';
+    this._namespace = '[Loom]::[Utils]::[Language]';
   }
 
   stringIndexOfExtension() {
@@ -49,11 +49,11 @@ class LangUtil {
         regex = regex.global
           ? regex
           : new RegExp(
-              regex.source,
-              'g' +
-                (regex.ignoreCase ? 'i' : '') +
-                (regex.multiLine ? 'm' : ''),
-            );
+            regex.source,
+            'g' +
+            (regex.ignoreCase ? 'i' : '') +
+            (regex.multiLine ? 'm' : ''),
+          );
         if (typeof startpos === 'undefined') {
           startpos = this.length;
         } else if (startpos < 0) {

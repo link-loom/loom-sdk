@@ -6,7 +6,7 @@ class SearchUtil {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Search]';
+    this._namespace = '[Loom]::[Utils]::[Search]';
   }
 
   /// Find an object dynamically by dot style

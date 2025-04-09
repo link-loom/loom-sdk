@@ -8,7 +8,7 @@ class ModelModule {
     this._dataTypesModule = this._dependencies.DataTypesModule;
 
     /* Assigments */
-    this._namespace = '[Server]::[Model]::[Module]';
+    this._namespace = '[Loom]::[Model]::[Module]';
   }
 
   setup() {

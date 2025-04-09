@@ -7,7 +7,7 @@ class DataTypesModule {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Data-Types]::[Module]';
+    this._namespace = '[Loom]::[Data-Types]::[Module]';
     this._dataTypes = {};
     this._dynamicTypes = {};
   }

@@ -19,7 +19,7 @@ class Loom {
     this._functionsModule = {};
     this._eventBrokerModule = {};
     this._eventBrokerModule = {};
-    this._namespace = '[Server]::[Module]';
+    this._namespace = '[Loom]::[Module]';
   }
 
   async ignite() {

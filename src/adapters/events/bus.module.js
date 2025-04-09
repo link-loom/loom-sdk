@@ -9,7 +9,7 @@ class BusModule {
     this._events = this._dependencies.events;
 
     /* Assigments */
-    this._namespace = '[Server]::[Event System]::[Bus]';
+    this._namespace = '[Loom]::[Event System]::[Bus]';
     this._bus = {};
   }
 

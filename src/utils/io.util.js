@@ -7,7 +7,7 @@ class IOUtil {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[IO]';
+    this._namespace = '[Loom]::[Utils]::[IO]';
   }
 
   #getParameters(data) {

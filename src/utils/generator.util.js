@@ -10,7 +10,7 @@ class GeneratorUtil {
     this._jwt = this._dependencies.jwt;
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Generator]';
+    this._namespace = '[Loom]::[Utils]::[Generator]';
   }
 
   #idGenerator({ length, prefix }) {

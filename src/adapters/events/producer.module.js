@@ -11,7 +11,7 @@ class EventProducerModule {
     this._websocketClientModule = this._dependencies.websocketClientModule;
 
     /* Assigments */
-    this._namespace = '[Server]::[Event System]::[Producer]';
+    this._namespace = '[Loom]::[Event System]::[Producer]';
     this._eventSystemDefinition = {};
   }
 

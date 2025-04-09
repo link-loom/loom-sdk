@@ -7,7 +7,7 @@ class PushModule {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Push]::[Module]';
+    this._namespace = '[Loom]::[Push]::[Module]';
     this._push = {};
   }
 

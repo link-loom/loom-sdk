@@ -10,7 +10,7 @@ class ValidatorUtil {
     this._jwt = this._dependencies.jwt;
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Validator]';
+    this._namespace = '[Loom]::[Utils]::[Validator]';
   }
 
   #objectIsEmpty(obj) {

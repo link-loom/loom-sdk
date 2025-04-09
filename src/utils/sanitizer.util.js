@@ -6,7 +6,7 @@ class SanitizerUtil {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Sanitizer]';
+    this._namespace = '[Loom]::[Utils]::[Sanitizer]';
   }
 
   #sanitizePort(val) {

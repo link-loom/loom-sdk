@@ -11,7 +11,7 @@ class EventBrokerModule {
     this._httpServer = this._dependencies.httpServer;
 
     /* Assigments */
-    this._namespace = '[Server]::[Event System]::[Broker]';
+    this._namespace = '[Loom]::[Event System]::[Broker]';
     this._webSocketServer = {};
   }
 

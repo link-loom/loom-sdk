@@ -7,7 +7,7 @@ class CryptoUtil {
     this._crypto = this._dependencies.crypto;
 
     /* Assigments */
-    this._namespace = '[Server]::[Utils]::[Security]';
+    this._namespace = '[Loom]::[Utils]::[Security]';
   }
 
   /**

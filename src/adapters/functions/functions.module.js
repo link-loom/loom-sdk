@@ -9,7 +9,7 @@ class FunctionsModule {
     this._path = this._dependencies.path;
 
     /* Assigments */
-    this._namespace = '[Server]::[Functions]';
+    this._namespace = '[Loom]::[Functions]';
     this._cluster = require(
       this._path.join(this._dependencies.root, 'src/functions/index'),
     );

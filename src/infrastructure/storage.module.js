@@ -11,7 +11,7 @@ class StorageModule {
     this._currentStorageSourceConfig = {};
 
     /* Assigments */
-    this._namespace = '[Server]::[Storage]::[Module]';
+    this._namespace = '[Loom]::[Storage]::[Module]';
     this._storage = {};
     this._stg = {
       operation: {},

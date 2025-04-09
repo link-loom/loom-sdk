@@ -7,7 +7,7 @@ class DependenciesModule {
     this._dependencies = this._args;
 
     /* Assigments */
-    this._namespace = '[Server]::[Dependencies]::[Module]';
+    this._namespace = '[Loom]::[Dependencies]::[Module]';
   }
 
   async setup() {

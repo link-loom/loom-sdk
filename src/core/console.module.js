@@ -7,7 +7,7 @@ class ConsoleModule {
     this._colors = dependencies.colors;
 
     /* Assigments */
-    this._namespace = '[Server]::[Console]::[Module]';
+    this._namespace = '[Loom]::[Console]::[Module]';
   }
 
   setup() {

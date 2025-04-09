@@ -80,6 +80,17 @@ class ObservabilityModule {
   get client() {
     return this._defaultAdapter || {};
   }
+
+  get api () {
+    return {
+      default: {
+        name: this._adapterName,
+        client: this._defaultAdapter,
+        settings: this._adapterSettings,
+      },
+      loadAdapter: this.loadAdapter
+    }
+  }
 }
 
 module.exports = { ObservabilityModule };

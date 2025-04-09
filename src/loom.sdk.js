@@ -58,7 +58,7 @@ class Loom {
 
     await this.#setupPushNotifications();
 
-    this.#setupObservability();
+    await this.#setupObservability();
   }
 
   async #setupAdapterModules() {
@@ -92,10 +92,7 @@ class Loom {
       process.exit();
     }
 
-    this._dependenciesModule.core.add(
-      this._dependenciesModule,
-      'DependenciesModule',
-    );
+    this._dependenciesModule.core.add(this._dependenciesModule, 'DependenciesModule');
   }
 
   #setupUtilities() {
@@ -105,10 +102,7 @@ class Loom {
     );
     this._utilitiesModule.setup();
 
-    this._dependenciesModule.core.add(
-      this._utilitiesModule,
-      'UtilitiesModule',
-    );
+    this._dependenciesModule.core.add(this._utilitiesModule, 'UtilitiesModule');
     this._dependenciesModule.core.add(this._utilitiesModule, 'utilities');
   }
 
@@ -119,10 +113,7 @@ class Loom {
     );
     this._settingsModule.setup();
 
-    this._dependenciesModule.core.add(
-      this._settingsModule,
-      'SettingsModule',
-    );
+    this._dependenciesModule.core.add(this._settingsModule, 'SettingsModule');
   }
 
   #setupConsole() {
@@ -142,10 +133,7 @@ class Loom {
     );
     this._dataTypesModule.setup();
 
-    this._dependenciesModule.core.add(
-      this._dataTypesModule,
-      'DataTypesModule',
-    );
+    this._dependenciesModule.core.add(this._dataTypesModule, 'DataTypesModule');
   }
 
   #setupEventBus() {
@@ -166,10 +154,7 @@ class Loom {
     this._serviceModule.setup();
 
     this._dependenciesModule.core.add(this._serviceModule, 'ServiceModule');
-    this._dependenciesModule.core.add(
-      this._serviceModule.services,
-      'services',
-    );
+    this._dependenciesModule.core.add(this._serviceModule.services, 'services');
   }
 
   #setupApi() {
@@ -266,21 +251,19 @@ class Loom {
     this._pushModule = new PushModule(this._dependenciesModule.core.get());
     await this._pushModule.setup();
 
-    this._dependenciesModule.core.add(
-      this._pushModule.push,
-      'PushNotificationModule',
-    );
+    this._dependenciesModule.core.add(this._pushModule.push, 'PushNotificationModule');
   }
 
-  #setupObservability() {
+  async #setupObservability() {
     const { ObservabilityModule } = require('./infrastructure/observability.module');
     this._observabilityModule = new ObservabilityModule({
       dependencies: this._dependenciesModule.core.get(),
       dependencyInjector: this._dependenciesModule,
     });
-    this._observabilityModule.setup();
+    await this._observabilityModule.setup();
 
     this._dependenciesModule.core.add(this._observabilityModule, 'ObservabilityModule');
+    this._dependenciesModule.core.add(this._observabilityModule.api, 'observability');
   }
 
   #setupServer() {

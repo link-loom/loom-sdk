@@ -27,7 +27,7 @@ class EmailModule {
       return;
     }
 
-    if (!this._emailModule?.provider) {
+    if (!this._emailModule?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }

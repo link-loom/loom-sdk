@@ -168,6 +168,7 @@ class DependenciesModule {
 
   #loadConfigFile(config) {
     try {
+      console.log(` ${this._dependencies.colors.green(this._namespace)}: Setting-up local environment variables with config file`);
       if (this.#objectIsEmpty(config)) {
         return false;
       }

@@ -24,7 +24,7 @@ class Loom {
 
   async ignite() {
     try {
-      console.log(` ${this._namespace}: Loading`);
+      console.log(` ${this._namespace}: Loading engine...`);
 
       await this.#setupCoreModules();
       await this.#setupInfrastructureModules();

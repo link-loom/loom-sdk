@@ -27,7 +27,7 @@ class ObservabilityModule {
       return;
     }
 
-    if (!this._observabilityModule?.provider) {
+    if (!this._observabilityModule?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }

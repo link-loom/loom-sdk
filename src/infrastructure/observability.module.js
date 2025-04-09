@@ -66,7 +66,7 @@ class ObservabilityModule {
       }
 
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/observability/${adapterName}/${adapterName}.adapter`);
-      const adapterInstance = new AdapterClass(this._dependencies, observabilityBehavior);
+      const adapterInstance = new AdapterClass(this._dependencies);
 
       const driver = await adapterInstance.setup?.({ settings });
 

@@ -70,8 +70,6 @@ class ObservabilityModule {
 
       const driver = await adapterInstance.setup?.({ settings });
 
-      this._console?.success('Module loaded', { namespace: this._namespace });
-
       return driver;
     } catch (error) {
       this._console?.error?.(`Failed to load observability adapter "${adapterName}"`, { namespace: this._namespace });

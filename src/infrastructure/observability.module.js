@@ -35,7 +35,7 @@ class ObservabilityModule {
     this.#loadAdapters();
     await this.#setupDefaultAdapter();
 
-    this._console.success('Module Module loaded', { namespace: this._namespace });
+    this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {

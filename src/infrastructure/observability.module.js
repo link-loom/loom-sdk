@@ -88,6 +88,7 @@ class ObservabilityModule {
         client: this._defaultAdapter,
         settings: this._adapterSettings,
       },
+      client,
       loadAdapter: this.loadAdapter
     }
   }

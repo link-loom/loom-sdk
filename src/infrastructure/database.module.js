@@ -24,17 +24,17 @@ class DatabaseModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._databaseModule?.enabled) {
+    if (!this._databaseModule?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._databaseModule?.default) {
+    if (!this._databaseModule?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    if (!this._databaseModule?.provider) {
+    if (!this._databaseModule?.settings?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }

@@ -31,7 +31,6 @@ class PushModule {
       return;
     }
 
-    this.#loadAdapters();
     this.#getAdapterSettings();
     switch (this._module?.default) {
       case 'firebase':
@@ -42,14 +41,6 @@ class PushModule {
     }
 
     this._console.success('Module loaded', { namespace: this._namespace });
-  }
-
-  #loadAdapters() {
-    try {
-      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/push-notification/index`);
-    } catch (error) {
-      this._console.error(error, { namespace: this._namespace });
-    }
   }
 
   #getAdapterSettings() {

@@ -39,18 +39,9 @@ class DatabaseModule {
       return;
     }
 
-    this.#loadAdapters();
     await this.#setupDefaultAdapter();
 
     this._console.success('Module loaded', { namespace: this._namespace });
-  }
-
-  #loadAdapters() {
-    try {
-      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/database/index`);
-    } catch (error) {
-      this._console.error(error, { namespace: this._namespace });
-    }
   }
 
   async #setupDefaultAdapter() {

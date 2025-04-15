@@ -73,9 +73,9 @@ class DatabaseModule {
   async loadAdapter({ adapterName, settings }) {
     try {
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/database/${adapterName}/${adapterName}.adapter`);
-      this._db.transaction = new AdapterClass(this._dependencies);
+      const adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await this._db.transaction.setup({ settings });
+      const driver = await adapterInstance.setup({ settings });
 
       return driver;
     } catch (error) {

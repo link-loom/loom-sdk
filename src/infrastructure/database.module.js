@@ -8,9 +8,10 @@ class DatabaseModule {
 
     /* Custom Properties */
     this._module = this._modules?.database || {};
-    this._moduleAdapters = [];
     this._adapterName = '';
     this._adapterSettings = {};
+    this._adapterInstance = {};
+    this._defaultClient = {};
 
     /* Assigments */
     this._namespace = '[Loom]::[Infrastructure]::[Module]::[Database]';
@@ -51,7 +52,7 @@ class DatabaseModule {
 
       this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
-      this._defaultAdapter = await this.loadAdapter({
+      this._defaultClient = await this.loadAdapter({
         adapterName: this._adapterName,
         settings: this._adapterSettings,
       });
@@ -63,9 +64,9 @@ class DatabaseModule {
   async loadAdapter({ adapterName, settings }) {
     try {
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/database/${adapterName}/${adapterName}.adapter`);
-      const adapterInstance = new AdapterClass(this._dependencies);
+      this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await adapterInstance.setup({ settings });
+      const driver = await this._adapterInstance.setup({ settings });
 
       return driver;
     } catch (error) {
@@ -74,15 +75,16 @@ class DatabaseModule {
   }
 
   get client() {
-    return this._defaultAdapter || {};
+    return this._defaultClient || {};
   }
 
   get api() {
     return {
       default: {
         name: this._adapterName,
-        client: this._defaultAdapter,
+        client: this._defaultClient,
         settings: this._adapterSettings,
+        adapter: this._adapterInstance,
       },
       client: this.client,
       loadAdapter: this.loadAdapter

@@ -82,7 +82,7 @@ class ObservabilityModule {
     return this._defaultAdapter || {};
   }
 
-  get api () {
+  get api() {
     return {
       default: {
         name: this._adapterName,

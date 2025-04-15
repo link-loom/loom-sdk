@@ -75,7 +75,7 @@ class DatabaseModule {
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/data-sources/${adapterName}/${adapterName}.adapter`);
       this._db.transaction = new AdapterClass(this._dependencies);
 
-      const driver = await this._db.transaction.setup({settings});
+      const driver = await this._db.transaction.setup({ settings });
 
       return driver;
     } catch (error) {
@@ -87,7 +87,7 @@ class DatabaseModule {
     return this._defaultAdapter || {};
   }
 
-  get api () {
+  get api() {
     return {
       default: {
         name: this._adapterName,

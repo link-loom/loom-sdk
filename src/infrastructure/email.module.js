@@ -8,7 +8,10 @@ class EmailModule {
 
     /* Custom Properties */
     this._module = this._modules?.email || {};
-    this._emailAdapter = null;
+    this._adapterName = '';
+    this._adapterSettings = {};
+    this._adapterInstance = {};
+    this._defaultClient = {};
 
     /* Assigments */
     this._namespace = '[Loom]::[Email]::[Behavior]';
@@ -70,9 +73,9 @@ class EmailModule {
       }
 
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/email/${adapterName}/${adapterName}.adapter`);
-      const adapterInstance = new AdapterClass(this._dependencies);
+      this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await adapterInstance.setup?.({ settings });
+      const driver = await this._adapterInstance.setup({ settings });
 
       this._console?.success('Module loaded', { namespace: this._namespace });
 
@@ -92,6 +95,7 @@ class EmailModule {
         name: this._adapterName,
         client: this._defaultAdapter,
         settings: this._adapterSettings,
+        adapter: this._adapterInstance,
       },
       loadAdapter: this.loadAdapter
     }

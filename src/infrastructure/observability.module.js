@@ -8,7 +8,10 @@ class ObservabilityModule {
 
     /* Custom Properties */
     this._module = this._modules?.observability || {};
-    this._defaultAdapter = null;
+    this._adapterName = '';
+    this._adapterSettings = {};
+    this._adapterInstance = {};
+    this._defaultClient = {};
 
     /* Assigments */
     this._namespace = '[Loom]::[Infrastructure]::[Module]::[Observability]';
@@ -57,9 +60,9 @@ class ObservabilityModule {
       }
 
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/observability/${adapterName}/${adapterName}.adapter`);
-      const adapterInstance = new AdapterClass(this._dependencies);
+      this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await adapterInstance.setup?.({ settings });
+      const driver = await this._adapterInstance.setup({ settings });
 
       return driver;
     } catch (error) {
@@ -78,6 +81,7 @@ class ObservabilityModule {
         name: this._adapterName,
         client: this._defaultAdapter,
         settings: this._adapterSettings,
+        adapter: this._adapterInstance,
       },
       client: this.client,
       loadAdapter: this.loadAdapter

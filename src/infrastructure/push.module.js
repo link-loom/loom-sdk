@@ -16,17 +16,17 @@ class PushModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._pushModule?.enabled) {
+    if (!this._pushModule?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._pushModule?.default) {
+    if (!this._pushModule?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    if (!this._pushModule?.provider) {
+    if (!this._pushModule?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }

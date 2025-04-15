@@ -24,17 +24,17 @@ class StorageModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._storageModule?.enabled) {
+    if (!this._storageModule?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._storageModule?.default) {
+    if (!this._storageModule?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    if (!this._storageModule?.provider) {
+    if (!this._storageModule?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }
@@ -56,7 +56,7 @@ class StorageModule {
 
   #getAdapterSettings() {
     try {
-      this._adapterName = this._storageModule?.default || '';
+      this._adapterName = this._storageModule?.settings?.default || '';
       this._adapterSettings = this._moduleAdapters.find(
         (dataSource) => dataSource.name === this._adapterName,
       );

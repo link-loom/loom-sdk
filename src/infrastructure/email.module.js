@@ -17,12 +17,12 @@ class EmailModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._emailModule?.enabled) {
+    if (!this._emailModule?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._emailModule?.default) {
+    if (!this._emailModule?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }

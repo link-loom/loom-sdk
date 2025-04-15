@@ -34,7 +34,7 @@ class DatabaseModule {
       return;
     }
 
-    if (!this._databaseModule?.settings?.providers) {
+    if (!this._databaseModule?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }

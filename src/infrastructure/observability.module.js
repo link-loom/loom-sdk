@@ -17,12 +17,12 @@ class ObservabilityModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._observabilityModule?.enabled) {
+    if (!this._observabilityModule?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._observabilityModule?.default) {
+    if (!this._observabilityModule?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }

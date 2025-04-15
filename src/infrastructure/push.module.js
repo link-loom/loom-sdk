@@ -6,7 +6,7 @@ class PushModule {
     this._modules = this._dependencies?.config?.modules || {};
 
     /* Custom Properties */
-    this._pushModule = this._modules?.push || {};
+    this._module = this._modules?.push || {};
 
     /* Assigments */
     this._namespace = '[Loom]::[Push]::[Module]';
@@ -16,24 +16,24 @@ class PushModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._pushModule?.settings?.enabled) {
+    if (!this._module?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._pushModule?.settings?.default) {
+    if (!this._module?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    if (!this._pushModule?.providers) {
+    if (!this._module?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }
 
     this.#loadAdapters();
     this.#getAdapterSettings();
-    switch (this._pushModule?.default) {
+    switch (this._module?.default) {
       case 'firebase':
         await this.firebaseConfig();
         break;

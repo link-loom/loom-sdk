@@ -7,7 +7,7 @@ class EmailModule {
     this._modules = this._dependencies?.config?.modules || {};
 
     /* Custom Properties */
-    this._emailModule = this._modules?.email || {};
+    this._module = this._modules?.email || {};
     this._emailAdapter = null;
 
     /* Assigments */
@@ -17,17 +17,17 @@ class EmailModule {
   async setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    if (!this._emailModule?.settings?.enabled) {
+    if (!this._module?.settings?.enabled) {
       this._console.info('Module disabled', { namespace: this._namespace });
       return;
     }
 
-    if (!this._emailModule?.settings?.default) {
+    if (!this._module?.settings?.default) {
       this._console.error('No module default', { namespace: this._namespace });
       return;
     }
 
-    if (!this._emailModule?.providers) {
+    if (!this._module?.providers) {
       this._dependencies.console?.error?.('No module provider specified', { namespace: this._namespace });
       return;
     }
@@ -47,15 +47,19 @@ class EmailModule {
   }
 
   async #setupDefaultAdapter() {
-    this._adapterName = this._emailModule?.default || '';
-    this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
+    try {
+      this._adapterName = this._module?.settings?.default || '';
+      this._adapterSettings = this._module?.providers[this._adapterName] || {};
 
-    this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
+      this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
-    this._defaultAdapter = await this.loadAdapter({
-      adapterName: this._adapterName,
-      settings: this._adapterSettings,
-    });
+      this._defaultAdapter = await this.loadAdapter({
+        adapterName: this._adapterName,
+        settings: this._adapterSettings,
+      });
+    } catch (error) {
+      this._console.error(error, { namespace: this._namespace });
+    }
   }
 
   async loadAdapter({ adapterName, settings }) {

@@ -1,6 +1,6 @@
 {
     "name": "@link-loom/sdk",
-    "version": "7.3.32",
+    "version": "7.3.33",
     "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
     "main": "index.js",
     "publishConfig": {

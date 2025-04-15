@@ -71,7 +71,7 @@ class DatabaseModule {
   async #setupSelectedDataSource() {
     try {
       const DataSource = require(
-        `${this._dependencies.root}/src/data-sources/${this._adapterSettings.path}`,
+        `${this._dependencies.root}/src/adapters/data-sources/${this._adapterSettings.path}`,
       );
 
       this._db.driver = this._dependencies[this._adapterSettings.customDependencyName];

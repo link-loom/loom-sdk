@@ -70,7 +70,7 @@ class StorageModule {
   #setupSelectedStorageSource() {
     try {
       const DataSource = require(
-        `${this._dependencies.root}/src/storage-source/${this._adapterSettings.path}`,
+        `${this._dependencies.root}/src/adapters/storage-source/${this._adapterSettings.path}`,
       );
 
       this._stg.driver =

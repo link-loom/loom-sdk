@@ -1,5 +1,5 @@
 class PushModule {
-  constructor(dependencies) {
+  constructor({ dependencies, dependencyInjector }) {
     /* Base Properties */
     this._dependencies = dependencies;
     this._console = dependencies.console;

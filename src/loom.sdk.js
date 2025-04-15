@@ -12,8 +12,8 @@ class Loom {
     this._modelsModule = {};
     this._dataTypesModule = {};
     this._authModule = {};
-    this._databaseModule = {};
-    this._pushModule = {};
+    this._module = {};
+    this._module = {};
     this._serviceModule = {};
     this._apiModule = {};
     this._functionsModule = {};
@@ -222,48 +222,51 @@ class Loom {
   async #setupDatabase() {
     const { DatabaseModule } = require('./infrastructure/database.module');
 
-    this._databaseModule = new DatabaseModule({
+    this._module = new DatabaseModule({
       dependencies: this._dependenciesModule.core.get(),
       dependencyInjector: this._dependenciesModule,
     });
 
-    await this._databaseModule.setup();
+    await this._module.setup();
 
-    this._dependenciesModule.core.add(this._databaseModule, 'DatabaseModule');
+    this._dependenciesModule.core.add(this._module, 'DatabaseModule');
+    this._dependenciesModule.core.add(this._module.api, 'database');
 
-    return this._databaseModule;
+    return this._module;
   }
 
   #setupStorage() {
     const { StorageModule } = require('./infrastructure/storage.module');
-    const _storageModule = new StorageModule({
+    const _module = new StorageModule({
       dependencies: this._dependenciesModule.core.get(),
       dependencyInjector: this._dependenciesModule,
     });
 
-    _storageModule.setup();
-    this._dependenciesModule.core.add(_storageModule, 'StorageModule');
-    return _storageModule;
+    _module.setup();
+    this._dependenciesModule.core.add(_module, 'StorageModule');
+    this._dependenciesModule.core.add(this._module.api, 'storage');
+    return _module;
   }
 
   async #setupPushNotifications() {
     const { PushModule } = require('./infrastructure/push.module');
-    this._pushModule = new PushModule(this._dependenciesModule.core.get());
-    await this._pushModule.setup();
+    this._module = new PushModule(this._dependenciesModule.core.get());
+    await this._module.setup();
 
-    this._dependenciesModule.core.add(this._pushModule.push, 'PushNotificationModule');
+    this._dependenciesModule.core.add(this._module.push, 'PushNotificationModule');
+    this._dependenciesModule.core.add(this._module.api, 'pushNotification');
   }
 
   async #setupObservability() {
     const { ObservabilityModule } = require('./infrastructure/observability.module');
-    this._observabilityModule = new ObservabilityModule({
+    this._module = new ObservabilityModule({
       dependencies: this._dependenciesModule.core.get(),
       dependencyInjector: this._dependenciesModule,
     });
-    await this._observabilityModule.setup();
+    await this._module.setup();
 
-    this._dependenciesModule.core.add(this._observabilityModule, 'ObservabilityModule');
-    this._dependenciesModule.core.add(this._observabilityModule.api, 'observability');
+    this._dependenciesModule.core.add(this._module, 'ObservabilityModule');
+    this._dependenciesModule.core.add(this._module.api, 'observability');
   }
 
   #setupServer() {

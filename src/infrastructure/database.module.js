@@ -93,7 +93,7 @@ class DatabaseModule {
         client: this._defaultAdapter,
         settings: this._adapterSettings,
       },
-      client,
+      client: this.client,
       loadAdapter: this.loadAdapter
     }
   }

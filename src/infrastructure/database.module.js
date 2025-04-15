@@ -40,52 +40,62 @@ class DatabaseModule {
     }
 
     this.#loadAdapters();
-    this.#getAdapterSettings();
-
-    await this.#setupSelectedDataSource();
+    await this.#setupDefaultAdapter();
 
     this._console.success('Module loaded', { namespace: this._namespace });
   }
 
   #loadAdapters() {
     try {
-      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/data-sources/index`);
+      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/database/index`);
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  #getAdapterSettings() {
+  async #setupDefaultAdapter() {
     try {
-      this._adapterName = this._databaseModule?.default || '';
-      this._adapterSettings = this._moduleAdapters.find(
-        (dataSource) => dataSource.name === this._adapterName,
-      );
+      const module = this._databaseModule || {};
+      this._adapterName = module?.settings?.default || '';
+      this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
 
-      this._console.success(`Adapter: ${this._adapterName}`, { namespace: this._namespace });
+      this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
+
+      this._defaultAdapter = await this.loadAdapter({
+        adapterName: this._adapterName,
+        settings: this._adapterSettings,
+      });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  async #setupSelectedDataSource() {
+  async loadAdapter({ adapterName, settings }) {
     try {
-      const DataSource = require(
-        `${this._dependencies.root}/src/adapters/data-sources/${this._adapterSettings.path}`,
-      );
+      const AdapterClass = require(`${this._dependencies.root}/src/adapters/data-sources/${adapterName}/${adapterName}.adapter`);
+      this._db.transaction = new AdapterClass(this._dependencies);
 
-      this._db.driver = this._dependencies[this._adapterSettings.customDependencyName];
+      const driver = await this._db.transaction.setup({settings});
 
-      // Add current datasource as db to dependency injection
-      this._dependencyInjector.core.add(this._db, 'db');
-
-      this._db.transaction = new DataSource(this._dependencies);
-
-      await this._db.transaction.setup();
-
-      this._console.success('Database manager loaded', { namespace: this._namespace });
+      return driver;
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
+    }
+  }
+
+  get client() {
+    return this._defaultAdapter || {};
+  }
+
+  get api () {
+    return {
+      default: {
+        name: this._adapterName,
+        client: this._defaultAdapter,
+        settings: this._adapterSettings,
+      },
+      client,
+      loadAdapter: this.loadAdapter
     }
   }
 

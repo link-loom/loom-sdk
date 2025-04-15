@@ -47,7 +47,8 @@ class ObservabilityModule {
   }
 
   async #setupDefaultAdapter() {
-    this._adapterName = this._observabilityModule?.default || '';
+    const module = this._observabilityModule || {};
+    this._adapterName = module?.settings?.default || '';
     this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
 
     this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });

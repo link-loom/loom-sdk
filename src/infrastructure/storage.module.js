@@ -40,8 +40,7 @@ class StorageModule {
     }
 
     this.#loadAdapters();
-    this.#getAdapterSettings();
-    this.#setupSelectedStorageSource();
+    await this.#setupDefaultAdapter();
 
     this._console.success('Storage module loaded', { namespace: this._namespace });
   }
@@ -54,46 +53,56 @@ class StorageModule {
     }
   }
 
-  #getAdapterSettings() {
+  async #setupDefaultAdapter() {
     try {
-      this._adapterName = this._storageModule?.settings?.default || '';
-      this._adapterSettings = this._moduleAdapters.find(
-        (dataSource) => dataSource.name === this._adapterName,
-      );
+      const module = this._storageModule || {};
+      this._adapterName = module?.settings?.default || '';
+      this._adapterSettings = this._moduleAdapters[this._adapterName]?.settings || {};
 
-      this._console.success(`Adapter: ${this._adapterName}`,{ namespace: this._namespace });
-    } catch (error) {
-      this._console.error(error, { namespace: this._namespace });
-    }
-  }
+      this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
-  #setupSelectedStorageSource() {
-    try {
-      const DataSource = require(
-        `${this._dependencies.root}/src/adapters/storage-source/${this._adapterSettings.path}`,
-      );
-
-      this._stg.driver =
-        this._dependencies[
-        this._adapterSettings.customDependencyName
-        ];
-
-      this._dependencyInjector.core.add(this._stg, 'storage');
-
-      this._stg.operation = new DataSource(this._dependencies);
-
-      this._stg.operation.setup();
-
-      this._console.success('Storage manager loaded', {
-        namespace: this._namespace,
+      this._defaultAdapter = await this.loadAdapter({
+        adapterName: this._adapterName,
+        settings: this._adapterSettings,
       });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  get storage() {
-    return this._stg;
+  async loadAdapter({ adapterName, settings }) {
+    try {
+      if (!this._adapterSettings) {
+        this._console?.error?.('No storage settings specified', { namespace: this._namespace });
+        return;
+      }
+
+      const AdapterClass = require(`${this._dependencies.root}/src/adapters/storage/${adapterName}/${adapterName}.adapter`);
+      const adapterInstance = new AdapterClass(this._dependencies);
+
+      const driver = await adapterInstance.setup?.({ settings });
+
+      return driver;
+    } catch (error) {
+      this._console?.error?.(`Failed to load storage adapter "${adapterName}"`, { namespace: this._namespace });
+      console.error(error);
+    }
+  }
+
+  get client() {
+    return this._defaultAdapter || {};
+  }
+
+  get api () {
+    return {
+      default: {
+        name: this._adapterName,
+        client: this._defaultAdapter,
+        settings: this._adapterSettings,
+      },
+      client,
+      loadAdapter: this.loadAdapter
+    }
   }
 }
 

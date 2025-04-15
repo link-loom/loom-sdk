@@ -11,7 +11,7 @@ class SettingsModule {
     this._httpServer = this._dependencies.httpServer;
 
     /* Assigments */
-    this._namespace = '[Loom]::[Settings]::[Module]';
+    this._namespace = '[Loom]::[Core]::[Settings]';
   }
 
   setup() {

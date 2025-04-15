@@ -11,7 +11,7 @@ class ObservabilityModule {
     this._defaultAdapter = null;
 
     /* Assigments */
-    this._namespace = '[Loom]::[Observability]::[Module]';
+    this._namespace = '[Loom]::[Infrastructure]::[Module]::[Observability]';
   }
 
   async setup() {

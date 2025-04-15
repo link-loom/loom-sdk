@@ -9,7 +9,7 @@ class PushModule {
     this._module = this._modules?.push || {};
 
     /* Assigments */
-    this._namespace = '[Loom]::[Push]::[Module]';
+    this._namespace = '[Loom]::[Infrastructure]::[Module]::[Push]';
     this._push = {};
   }
 

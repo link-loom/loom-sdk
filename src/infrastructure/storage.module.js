@@ -13,7 +13,7 @@ class StorageModule {
     this._adapterSettings = {};
 
     /* Assigments */
-    this._namespace = '[Loom]::[Storage]::[Module]';
+    this._namespace = '[Loom]::[Infrastructure]::[Module]::[Storage]';
     this._storage = {};
     this._stg = {
       operation: {},

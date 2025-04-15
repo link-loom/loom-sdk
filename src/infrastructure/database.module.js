@@ -13,7 +13,7 @@ class DatabaseModule {
     this._adapterSettings = {};
 
     /* Assigments */
-    this._namespace = '[Loom]::[Database]::[Module]';
+    this._namespace = '[Loom]::[Infrastructure]::[Module]::[Database]';
     this._db = {
       transaction: {},
       driver: {},

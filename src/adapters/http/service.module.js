@@ -7,7 +7,7 @@ class ServiceModule {
     /* Custom Properties */
 
     /* Assigments */
-    this._namespace = '[Loom]::[Service]::[Module]';
+    this._namespace = '[Loom]::[Adapter]::[HTTP]::[Service]';
   }
 
   setup() {

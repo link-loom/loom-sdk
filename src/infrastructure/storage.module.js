@@ -47,7 +47,7 @@ class StorageModule {
 
   #loadAdapters() {
     try {
-      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/storage-source/index`);
+      this._moduleAdapters = require(`${this._dependencies.root}/src/adapters/storage/index`);
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }

@@ -46,7 +46,7 @@ class PushModule {
   #getAdapterSettings() {
     try {
       this._adapterName = this._storageModule?.default || '';
-      this._adapterSettings = this._moduleAdapters.find(
+      this._adapter = this._moduleAdapters.find(
         (dataSource) => dataSource.name === this._adapterName,
       );
 

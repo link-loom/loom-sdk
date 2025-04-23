@@ -9,7 +9,7 @@ class StorageModule {
     /* Custom Properties */
     this._module = this._modules?.storage || {};
     this._adapterName = '';
-    this._adapterSettings = {};
+    this._adapter = {};
     this._adapterInstance = {};
     this._defaultClient = {};
 
@@ -43,30 +43,30 @@ class StorageModule {
   async #setupDefaultAdapter() {
     try {
       this._adapterName = this._module?.settings?.default || '';
-      this._adapterSettings = this._module?.providers[this._adapterName] || {};
+      this._adapter = this._module?.providers[this._adapterName] || {};
 
       this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
       this._defaultAdapter = await this.loadAdapter({
         adapterName: this._adapterName,
-        settings: this._adapterSettings,
+        adapter: this._adapter,
       });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  async loadAdapter({ adapterName, settings }) {
+  async loadAdapter({ adapterName, adapter }) {
     try {
-      if (!this._adapterSettings) {
-        this._console?.error?.('No storage settings specified', { namespace: this._namespace });
+      if (!this._adapter) {
+        this._console?.error?.('No storage adapter specified', { namespace: this._namespace });
         return;
       }
 
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/storage/${adapterName}/${adapterName}.adapter`);
       this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await this._adapterInstance.setup({ settings });
+      const driver = await this._adapterInstance.setup({ adapter });
 
       return driver;
     } catch (error) {
@@ -84,7 +84,7 @@ class StorageModule {
       default: {
         name: this._adapterName,
         client: this._defaultAdapter,
-        settings: this._adapterSettings,
+        settings: this._adapter,
         adapter: this._adapterInstance,
       },
       client: this.client,

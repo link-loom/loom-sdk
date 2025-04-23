@@ -9,7 +9,7 @@ class EmailModule {
     /* Custom Properties */
     this._module = this._modules?.email || {};
     this._adapterName = '';
-    this._adapterSettings = {};
+    this._adapter = {};
     this._adapterInstance = {};
     this._defaultClient = {};
 
@@ -52,30 +52,30 @@ class EmailModule {
   async #setupDefaultAdapter() {
     try {
       this._adapterName = this._module?.settings?.default || '';
-      this._adapterSettings = this._module?.providers[this._adapterName] || {};
+      this._adapter = this._module?.providers[this._adapterName] || {};
 
       this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
       this._defaultAdapter = await this.loadAdapter({
         adapterName: this._adapterName,
-        settings: this._adapterSettings,
+        adapter: this._adapter,
       });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  async loadAdapter({ adapterName, settings }) {
+  async loadAdapter({ adapterName, adapter }) {
     try {
-      if (!this._adapterSettings) {
-        this._console?.error?.('No email settings specified', { namespace: this._namespace });
+      if (!this._adapter) {
+        this._console?.error?.('No email adapter specified', { namespace: this._namespace });
         return;
       }
 
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/email/${adapterName}/${adapterName}.adapter`);
       this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await this._adapterInstance.setup({ settings });
+      const driver = await this._adapterInstance.setup({ adapter });
 
       this._console?.success('Module loaded', { namespace: this._namespace });
 
@@ -94,7 +94,7 @@ class EmailModule {
       default: {
         name: this._adapterName,
         client: this._defaultAdapter,
-        settings: this._adapterSettings,
+        settings: this._adapter,
         adapter: this._adapterInstance,
       },
       loadAdapter: this.loadAdapter

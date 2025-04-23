@@ -9,7 +9,7 @@ class DatabaseModule {
     /* Custom Properties */
     this._module = this._modules?.database || {};
     this._adapterName = '';
-    this._adapterSettings = {};
+    this._adapter = {};
     this._adapterInstance = {};
     this._defaultClient = {};
 
@@ -48,25 +48,25 @@ class DatabaseModule {
   async #setupDefaultAdapter() {
     try {
       this._adapterName = this._module?.settings?.default || '';
-      this._adapterSettings = this._module?.providers[this._adapterName] || {};
+      this._adapter = this._module?.providers[this._adapterName] || {};
 
       this._console.success(`Default adapter: ${this._adapterName}`, { namespace: this._namespace });
 
       this._defaultClient = await this.loadAdapter({
         adapterName: this._adapterName,
-        settings: this._adapterSettings,
+        adapter: this._adapter,
       });
     } catch (error) {
       this._console.error(error, { namespace: this._namespace });
     }
   }
 
-  async loadAdapter({ adapterName, settings }) {
+  async loadAdapter({ adapterName, adapter }) {
     try {
       const AdapterClass = require(`${this._dependencies.root}/src/adapters/database/${adapterName}/${adapterName}.adapter`);
       this._adapterInstance = new AdapterClass(this._dependencies);
 
-      const driver = await this._adapterInstance.setup({ settings });
+      const driver = await this._adapterInstance.setup({ adapter });
 
       return driver;
     } catch (error) {
@@ -83,7 +83,7 @@ class DatabaseModule {
       default: {
         name: this._adapterName,
         client: this._defaultClient,
-        settings: this._adapterSettings,
+        settings: this._adapter,
         adapter: this._adapterInstance,
       },
       client: this.client,

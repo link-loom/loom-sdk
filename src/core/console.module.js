@@ -46,7 +46,7 @@ class ConsoleModule {
     const { title, namespace } = args;
 
     console.log(
-      ` ${this._colors.red(`${title || namespace || ''}[ERROR]`)}:`,
+      ` ${this._colors.red(`${title || namespace || ''}::[ERROR]`)}:`,
       body,
     );
   }
@@ -55,6 +55,10 @@ class ConsoleModule {
     const { title, namespace } = args;
 
     console.log(` ${this._colors.cyan(title || namespace || '')}:`, body);
+
+    if (args.error) {
+      console.error(error);
+    }
   }
 
   warning(body, args = {}) {

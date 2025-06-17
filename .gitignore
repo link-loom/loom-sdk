@@ -38,3 +38,4 @@ jspm_packages
 
 # Remove secrets
 config/default.json
+.DS_Store

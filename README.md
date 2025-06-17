@@ -40,7 +40,7 @@ npm install -g @link-loom/cli
 Step 2. Create a project with cli tool and follow instructions
 
 ```shell
-link-loom -n name-of-project
+link-loom create --name name-of-project
 ```
 
 ## Install dependencies

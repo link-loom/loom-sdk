@@ -1,5 +1,8 @@
 # Link Loom SDK
 
+[![GitHub license](https://img.shields.io/github/license/link-loom/loom-sdk.svg)](https://github.com/link-loom/loom-sdk/blob/master/LICENSE) 
+[![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/@link-loom/sdk)
+
 **A modular runtime framework for building governed, extensible, and production-ready systems in Node.js.**
 
 Link Loom SDK provides a unified runtime architecture designed for teams that require structure, reliability, and long-term maintainability in distributed environments.  
@@ -163,7 +166,7 @@ Design Principles:
 | **Scope of Use** | Foundational runtime for multi-system ecosystems | Web and API applications | HTTP services | Basic APIs | Distributed backends | Long-running workflows |
 | **Performance Target** | I/O-optimized modular runtime | HTTP-centric | Extremely high | Moderate | Depends on broker latency | Depends on workflow persistence |
 | **Language** | TypeScript / JavaScript | TypeScript | TypeScript / JavaScript | JavaScript | JavaScript | Go / TypeScript / Java |
-| **License** | MIT | MIT | MIT | MIT | MIT | Apache-2.0 |
+| **License** | Apache-2.0 | MIT | MIT | MIT | MIT | Apache-2.0 |
 
 ---
 

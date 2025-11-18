@@ -136,7 +136,7 @@ class ApiModule {
 
   #buildDocs() {
     const baseModelPath = this._path.resolve(
-      require.resolve('@link-loom/sdk/src/utils/models/base.model.js')
+      require.resolve('./../../utils/models/base.model.js')
     );
     const options = {
       definition: {

@@ -1,3 +1,6 @@
+const { createRequire } = require('module');
+const path = require('path');
+
 class DependenciesModule {
   constructor(args) {
     /* Base Properties */
@@ -18,6 +21,7 @@ class DependenciesModule {
   async loadDependencies() {
     console.log(` ${this._namespace}: Loading`);
 
+    // Base/internal deps (resolved from SDK itself)
     const request = require('axios');
     const root = this._args.root;
     const http = require('http');
@@ -26,10 +30,18 @@ class DependenciesModule {
     const express = expressModule();
     const httpServer = http.createServer(express);
     const socketModule = require('socket.io');
-    const websocketClientModule = require('socket.io-client');
     const multerModule = require('multer');
     const dotenv = require('dotenv').config();
     const config = require('config');
+
+    // Resolver pointing to the CLIENT project (root)
+    const clientRequire = createRequire(path.join(root, 'package.json'));
+    const safeClientRequire = (pkg) => {
+      try { return clientRequire(pkg); } catch { return null; }
+    };
+    const resolveFromClient = (pkg) => {
+      try { return clientRequire.resolve(pkg); } catch { return null; }
+    };
 
     this._dependencies = {
       root,
@@ -39,7 +51,8 @@ class DependenciesModule {
       events,
       httpServer,
       socketModule,
-      websocketClientModule,
+      // Prefer client version of socket.io-client if present
+      websocketClientModule: safeClientRequire('socket.io-client') || require('socket.io-client'),
       expressModule,
       request,
       dotenv,
@@ -54,7 +67,7 @@ class DependenciesModule {
       jwt: require('jsonwebtoken'),
       colors: require('colors/safe'),
       compress: require('compression'),
-      nodemailer: require('nodemailer'),
+      // nodemailer will be injected conditionally below
       bodyParser: require('body-parser'),
       cookieParser: require('cookie-parser'),
       exceljs: require('exceljs'),
@@ -73,7 +86,24 @@ class DependenciesModule {
       return false;
     }
 
-    this.#importCustomDependencies();
+    // Load nodemailer only when email module is enabled; resolve from client first
+    try {
+      const emailEnabled = !!this._dependencies?.config?.modules?.email?.settings?.enabled;
+      if (emailEnabled) {
+        const nm = safeClientRequire('nodemailer') || require('nodemailer');
+        this._dependencies.nodemailer = nm;
+      }
+    } catch (e) {
+      const where = resolveFromClient('nodemailer') || '(unresolved in client)';
+      console.error(`[${this._namespace}] Missing "nodemailer" in client. Searched: ${where}`);
+      console.error('→ Install in client:  npm i nodemailer');
+      return false;
+    }
+
+    const customOk = this.#importCustomDependencies(clientRequire);
+    if (customOk === false) {
+      return false;
+    }
 
     console.log(` ${this._dependencies.colors.green(this._namespace)}: Loaded`);
     return true;
@@ -136,7 +166,6 @@ class DependenciesModule {
 
       this._dependencies.config = veripassConfig;
 
-
       console.log(` ${this._dependencies.colors.green(this._namespace)}: Running Veripass environment variables`);
 
       return true;
@@ -149,16 +178,12 @@ class DependenciesModule {
       );
 
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls outside the range of 2xx
         console.error('Status:', error.response.status);
         console.error('Headers:', error.response.headers);
         console.error('Data:', error.response.data);
       } else if (error.request) {
-        // The request was made but no response was received
         console.error('Request:', error.request);
       } else {
-        // Something happened in setting up the request
         console.error('Error Message:', error.message);
       }
 
@@ -180,11 +205,11 @@ class DependenciesModule {
     }
   }
 
-  #importCustomDependencies() {
+  #importCustomDependencies(clientRequire) {
     const dependencies = this._dependencies?.config?.customDependencies || [];
 
     if (!dependencies || !dependencies.length) {
-      return;
+      return true;
     }
 
     console.log(
@@ -192,21 +217,33 @@ class DependenciesModule {
         this._namespace,
       )}: Loading custom dependencies`,
     );
-    dependencies.map((customDependency) => {
-      console.log(
-        ` ${this._dependencies.colors.cyan(this._namespace)}: Loading ${customDependency.name
-        } dependency`,
-      );
-      this._dependencies[customDependency.name] = require(
-        customDependency.package,
-      );
-      return customDependency;
+
+    const missing = [];
+    dependencies.forEach((customDependency) => {
+      const { name, package: pkg } = customDependency;
+      try {
+        console.log(
+          ` ${this._dependencies.colors.cyan(this._namespace)}: Loading ${name} dependency`,
+        );
+        this._dependencies[name] = clientRequire(pkg);
+      } catch (_err) {
+        missing.push({ name, pkg });
+      }
     });
+
+    if (missing.length) {
+      console.error(` ${this._dependencies.colors.red(this._namespace)}: Missing client dependencies:`);
+      missing.forEach(m => console.error(`  - ${m.name}: ${m.pkg}`));
+      console.error(`→ Install in client:\n   npm i ${missing.map(m => m.pkg).join(' ')}`);
+      return false;
+    }
+
     console.log(
       ` ${this._dependencies.colors.green(
         this._namespace,
       )}: Loaded custom dependencies`,
     );
+    return true;
   }
 
   getDependencies() {

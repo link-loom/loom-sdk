@@ -176,7 +176,7 @@ class Loom {
   }
 
   #setupApps() {
-    const { AppsModule } = require('./adapters/apps/api.module');
+    const { AppsModule } = require('./adapters/apps/apps.module');
     this._appsModule = new AppsModule(this._dependenciesModule.core.get());
     this._appsModule.setup();
 

@@ -97,47 +97,151 @@ class ApiModule {
     res.status(serviceResponse?.status || 200).json(serviceResponse);
   }
 
+  /**
+   * Registers a single endpoint for a given domain path.
+   *
+   * This helper centralizes the "require + handleHttpMethod" logic so it
+   * can be reused by both flat and nested router definitions.
+   *
+   * @private
+   * @param {Object} args
+   * @param {string} args.domainPath - Joined domain segments, e.g. "finance/transactions".
+   * @param {Object} args.endpoint   - Endpoint definition from the router tree.
+   */
+  #registerEndpoint({ domainPath, endpoint }) {
+    try {
+      const Route = require(
+        this._path.join(this._dependencies.root, `src/${endpoint.route}`),
+      );
+
+      this.#handleHttpMethod({
+        route: new Route(this._dependencies),
+        domain: domainPath,
+        endpoint,
+      });
+    } catch (error) {
+      this._console.error(
+        `Endpoint failed: ${JSON.stringify({
+          domain: domainPath,
+          endpoint,
+          error: error?.message,
+        })}`,
+        true,
+      );
+    }
+  }
+
+  /**
+   * Walks a router node recursively and registers its endpoints.
+   *
+   * It supports:
+   * - flat structures: { communication: [ ... ] }
+   * - nested structures: { finance: { transactions: { auditing: [ ... ] } } }
+   *
+   * @private
+   * @param {*} node - Current node in the router tree (object or array).
+   * @param {string[]} domainSegments - Accumulated domain segments.
+   */
+  #walkRouterNode(node, domainSegments = []) {
+    if (!node) return;
+
+    // Case 1: leaf node is an array of endpoint definitions
+    if (Array.isArray(node)) {
+      const domainPath = domainSegments.join('/');
+
+      node.forEach((endpoint) => {
+        this.#registerEndpoint({ domainPath, endpoint });
+      });
+
+      return;
+    }
+
+    // Case 2: node is a plain object → go deeper into the tree
+    if (typeof node === 'object') {
+      Object.keys(node).forEach((key) => {
+        if (!Object.hasOwnProperty.call(node, key)) return;
+
+        const child = node[key];
+        const nextSegments = [...domainSegments, key];
+
+        this.#walkRouterNode(child, nextSegments);
+      });
+
+      return;
+    }
+
+    // Case 3: unsupported type (string, number, etc.) → log a warning
+    this._console.warn?.(
+      `Unsupported router node type at "${domainSegments.join('/')}": ${typeof node}`,
+    );
+  }
+
+  /**
+   * Builds all API endpoints declared in `src/routes/router.js`.
+   *
+   * This implementation supports both:
+   * - flat domains: { communication: [ ... ] }
+   * - nested domains: { finance: { transactions: { auditing: [ ... ] } } }
+   *
+   * The final HTTP path is built by joining domain segments with `/`
+   * and appending `endpoint.httpRoute`. For example:
+   *   domainSegments = ['finance', 'transactions', 'auditing']
+   *   endpoint.httpRoute = '/accounting-lock/list'
+   *   → /finance/transactions/auditing/accounting-lock/list
+   */
   #buildApiEndpoints() {
     const router = require(
       this._path.join(this._dependencies.root, 'src', 'routes', 'router'),
     );
 
-    // Iterate over domain inside router file and try to build all API Rest routes
-    for (const domainName in router) {
-      if (Object.hasOwnProperty.call(router, domainName)) {
-        const domain = router[domainName];
+    // Iterate over each root key in the router and walk the tree.
+    Object.keys(router).forEach((rootKey) => {
+      if (!Object.hasOwnProperty.call(router, rootKey)) return;
 
-        domain.map((endpoint) => {
-          try {
-            const Route = require(
-              this._path.join(this._dependencies.root, `src/${endpoint.route}`),
-            );
+      const node = router[rootKey];
 
-            this.#handleHttpMethod({
-              route: new Route(this._dependencies),
-              domain: domainName,
-              endpoint,
-            });
-          } catch (error) {
-            this._console.error(
-              `Endpoint failed: ${JSON.stringify(endpoint)}`,
-              true,
-            );
-          }
+      // Start recursion with the root key as the first domain segment.
+      this.#walkRouterNode(node, [rootKey]);
+    });
 
-          return endpoint;
-        });
-      }
-    }
-
-    // All API Rest endpoints are part of the root
+    // All API REST endpoints are mounted under the root path.
     this._app.use('/', this._router);
   }
 
+  /**
+   * Builds OpenAPI docs for the current service.
+   *
+   * It tries to resolve the SDK base model using the package name
+   * (normal dependency usage) and falls back to a local path when
+   * running directly from the SDK repository.
+   */
   #buildDocs() {
-    const baseModelPath = this._path.resolve(
-      require.resolve('@link-loom/sdk/src/utils/models/base.model.js')
-    );
+    let baseModelPath;
+
+    try {
+      // Normal case: SDK installed as dependency in node_modules
+      baseModelPath = this._path.resolve(
+        require.resolve('@link-loom/sdk/src/utils/models/base.model.js'),
+      );
+    } catch (error) {
+      // Local dev case: running directly from the SDK repo
+      baseModelPath = this._path.resolve(
+        this._path.join(
+          __dirname,
+          '..',
+          '..',
+          'utils',
+          'models',
+          'base.model.js',
+        ),
+      );
+
+      this._console.warn?.(
+        '[HTTP::API] Falling back to local base.model.js path for OpenAPI docs: ' +
+          baseModelPath,
+      );
+    }
+
     const options = {
       definition: {
         openapi: '3.0.0',
@@ -152,7 +256,11 @@ class ApiModule {
           },
         ],
       },
-      apis: ['src/routes/api/**/*.route.js', 'src/models/**/*.js', baseModelPath],
+      apis: [
+        'src/routes/api/**/*.route.js',
+        'src/models/**/*.js',
+        baseModelPath,
+      ],
       customSiteTitle: this._config?.server?.name || 'Link Loom API',
     };
 
@@ -165,6 +273,7 @@ class ApiModule {
         customSiteTitle: `${this._config?.server?.name} - ${this._config?.server?.version}`,
       }),
     );
+
     this._app.get('/open-api.json', (_, res) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(specs);

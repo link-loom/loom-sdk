@@ -1,61 +1,63 @@
 {
-    "name": "@link-loom/sdk",
-    "version": "7.3.36",
-    "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
-    "main": "index.js",
-    "publishConfig": {
-        "access": "public"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/link-loom/loom-sdk.git"
-    },
-    "author": "Camilo Alexander Rodriguez Cuaran <camiepisode@outlook.com>",
-    "license": "Apache-2.0",
-    "bugs": {
-        "url": "https://github.com/link-loom/loom-sdk/issues"
-    },
-    "homepage": "https://github.com/link-loom/loom-sdk",
-    "keywords": [
-        "loom",
-        "sdk",
-        "core",
-        "microservices",
-        "node.js",
-        "javascript",
-        "link-loom"
-    ],
-    "dependencies": {
-        "aes-js": "^3.1.2",
-        "axios": "^1.8.4",
-        "bcryptjs": "^2.4.3",
-        "body-parser": "latest",
-        "colors": "latest",
-        "compression": "^1.7.2",
-        "config": "^1.30.0",
-        "cookie-parser": "^1.4.3",
-        "cors": "latest",
-        "dotenv": "^16.3.1",
-        "exceljs": "^3.3.1",
-        "express": "^5.1.0",
-        "helmet": "^3.21.2",
-        "html-to-text": "^5.1.1",
-        "jsonwebtoken": "latest",
-        "moment": "^2.29.4",
-        "multer": "^1.4.5-lts.1",
-        "socket.io": "^4.4.1",
-        "socket.io-client": "^4.4.1",
-        "swagger-jsdoc": "^6.2.8",
-        "swagger-ui-express": "^4.6.2"
-    },
-    "devDependencies": {
-        "eslint": "^8.48.0",
-        "eslint-config-prettier": "^9.0.0",
-        "eslint-plugin-prettier": "^5.0.0",
-        "prettier": "^3.0.3"
-    },
-    "scripts": {
-        "lint": "eslint src/**/*.{js,jsx}",
-        "format": "prettier --write **/*.{js,jsx}"
-    }
+  "name": "@link-loom/sdk",
+  "version": "7.3.36",
+  "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/link-loom/loom-sdk.git"
+  },
+  "author": "Camilo Alexander Rodriguez Cuaran <camiepisode@outlook.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/link-loom/loom-sdk/issues"
+  },
+  "homepage": "https://github.com/link-loom/loom-sdk",
+  "keywords": [
+    "loom",
+    "sdk",
+    "core",
+    "microservices",
+    "node.js",
+    "javascript",
+    "link-loom"
+  ],
+  "dependencies": {
+    "aes-js": "^3.1.2",
+    "axios": "^1.8.4",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "latest",
+    "colors": "latest",
+    "compression": "^1.7.2",
+    "config": "^1.30.0",
+    "cookie-parser": "^1.4.3",
+    "cors": "latest",
+    "dotenv": "^16.3.1",
+    "exceljs": "^3.3.1",
+    "express": "^5.1.0",
+    "helmet": "^3.21.2",
+    "html-to-text": "^5.1.1",
+    "jsonwebtoken": "latest",
+    "moment": "^2.29.4",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.4.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^4.6.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.3"
+  },
+  "scripts": {
+    "lint": "eslint src/**/*.{js,jsx}",
+    "format": "prettier --write **/*.{js,jsx}",
+    "version-patch": "npm version patch",
+    "publish": "npm publish"
+  }
 }

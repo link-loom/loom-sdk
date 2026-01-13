@@ -62,7 +62,7 @@ class DependenciesModule {
       swaggerUi: require('swagger-ui-express'),
     };
 
-    const isConfigLoaded = await this.#loadConfig(config);
+    const isConfigLoaded = await this.#loadEnvironment(config);
 
     if (!isConfigLoaded) {
       console.error(
@@ -79,15 +79,15 @@ class DependenciesModule {
     return true;
   }
 
-  async #loadConfig(config) {
+  async #loadEnvironment(config) {
     try {
-      const hasVeripassConfiguration = this.#validateVeripassConfig();
+      const hasLinkLoomCloudConfiguration = this.#validateLinkLoomCloudConfig();
 
-      if (hasVeripassConfiguration) {
-        return this.#loadConfigFromVeripass();
+      if (hasLinkLoomCloudConfiguration) {
+        return this.#loadEnvironmentFromLinkLoomCloud();
       }
 
-      return this.#loadConfigFile(config);
+      return this.#loadLocalEnvironment(config);
     } catch (error) {
       console.error(
         ` ${this._dependencies.colors.green(
@@ -99,8 +99,8 @@ class DependenciesModule {
     }
   }
 
-  #validateVeripassConfig() {
-    if (!process.env.VERIPASS_SERVICE_URL || !process.env.VERIPASS_API_KEY) {
+  #validateLinkLoomCloudConfig() {
+    if (!process.env.LINKLOOM_CLOUD_SERVICE_URL || !process.env.LINKLOOM_CLOUD_API_KEY) {
       return false;
     }
 
@@ -116,28 +116,28 @@ class DependenciesModule {
     return true;
   }
 
-  async #loadConfigFromVeripass() {
+  async #loadEnvironmentFromLinkLoomCloud() {
     try {
-      const veripassServiceUrl = process.env.VERIPASS_SERVICE_URL;
-      const veripassApiKey = process.env.VERIPASS_API_KEY;
-      const veripassEnvironmentName = process.env.VERIPASS_ENVIRONMENT_NAME;
+      const linkLoomCloudServiceUrl = process.env.LINKLOOM_CLOUD_SERVICE_URL;
+      const linkLoomCloudApiKey = process.env.LINKLOOM_CLOUD_API_KEY;
+      const linkLoomCloudEnvironmentName = process.env.LINKLOOM_CLOUD_ENVIRONMENT_NAME;
 
       const veripassResponse = await this._dependencies.request.get(
-        `${veripassServiceUrl}/?environment_type=${veripassEnvironmentName ?? 'development'}`,
+        `${linkLoomCloudServiceUrl}/?environment_type=${linkLoomCloudEnvironmentName ?? 'development'}`,
         {
           headers: {
-            Authorization: `Bearer ${veripassApiKey}`,
+            Authorization: `Bearer ${linkLoomCloudApiKey}`,
           },
         },
       );
 
-      const veripassConfig =
+      const linkLoomCloudEnvironment =
         veripassResponse.data?.result?.items?.[0]?.variables;
 
-      this._dependencies.config = veripassConfig;
+      this._dependencies.config = linkLoomCloudEnvironment;
 
 
-      console.log(` ${this._dependencies.colors.green(this._namespace)}: Running Veripass environment variables`);
+      console.log(` ${this._dependencies.colors.green(this._namespace)}: Running Link Loom Cloud environment variables`);
 
       return true;
     } catch (error) {
@@ -145,7 +145,7 @@ class DependenciesModule {
       console.error(
         ` ${this._dependencies.colors.green(
           this._namespace,
-        )}: Error loading Veripass configuration`,
+        )}: Error loading Link Loom Cloud configuration`,
       );
 
       if (error.response) {
@@ -166,7 +166,7 @@ class DependenciesModule {
     }
   }
 
-  #loadConfigFile(config) {
+  #loadLocalEnvironment(config) {
     try {
       console.log(` ${this._dependencies.colors.green(this._namespace)}: Setting-up local environment variables with config file`);
       if (this.#objectIsEmpty(config)) {

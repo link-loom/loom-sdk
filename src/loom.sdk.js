@@ -13,6 +13,7 @@ class Loom {
     this._dataTypesModule = {};
     this._authModule = {};
     this._serviceModule = {};
+    this._apiModule = {};
     this._appsModule = {};
     this._functionsModule = {};
     this._eventBrokerModule = {};
@@ -159,10 +160,10 @@ class Loom {
 
   #setupApi() {
     const { ApiModule } = require('./adapters/http/api.module');
-    this._appsModule = new ApiModule(this._dependenciesModule.core.get());
-    this._appsModule.setup();
+    this._apiModule = new ApiModule(this._dependenciesModule.core.get());
+    this._apiModule.setup();
 
-    this._dependenciesModule.core.add(this._appsModule, 'ApiModule');
+    this._dependenciesModule.core.add(this._apiModule, 'ApiModule');
   }
 
   #setupFunctions() {

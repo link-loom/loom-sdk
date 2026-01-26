@@ -151,9 +151,8 @@
  * - If a hook throws, the instance may transition to CRASHED. This module does not auto-restart.
  * - Retry/backoff or resurrection policies should be enforced by the host/orchestrator layer.
  */
-const {
-  ApplicationStateMachine,
-} = require('./app.state-machine');
+const { ApplicationStateMachine } = require('./app.state-machine');
+const ThreadedAppProxy = require('./worker/threaded-app.proxy');
 
 class AppsModule {
   /**
@@ -225,8 +224,9 @@ class AppsModule {
         hasClass: !!appRegistryEntry.AppClass,
         autostart: !!appRegistryEntry.autostart,
         autostartMode: appRegistryEntry.autostartMode || null,
-        instances: Array.from((appRegistryEntry.instances || new Map()).entries())
-          .map(([alias, inst]) => ({ alias, pid: inst?.pid || null })),
+        instances: Array.from(
+          (appRegistryEntry.instances || new Map()).entries(),
+        ).map(([alias, inst]) => ({ alias, pid: inst?.pid || null })),
       });
     }
     return output;
@@ -242,19 +242,23 @@ class AppsModule {
    * @param {Function} AppClass
    * @param {{autostart?:boolean, autostartMode?:'foreground'|'background'}} [meta]
    */
-  register(name, AppClass, meta = {}) {
+  register(name, AppClass, meta = {}, path = null) {
     if (!name || !AppClass) {
       throw new Error('register(name, AppClass) requires valid arguments');
     }
 
     const entry = this._registry.get(name) || { name, instances: new Map() };
     entry.AppClass = AppClass;
+    if (path) entry.path = path;
 
     if (typeof meta.autostart === 'boolean') {
       entry.autostart = meta.autostart;
     }
 
-    if (meta.autostartMode === 'foreground' || meta.autostartMode === 'background') {
+    if (
+      meta.autostartMode === 'foreground' ||
+      meta.autostartMode === 'background'
+    ) {
       entry.autostartMode = meta.autostartMode;
     }
 
@@ -263,7 +267,9 @@ class AppsModule {
     }
 
     this._registry.set(name, entry);
-    this._console.info(`Registered app: ${name}`, { namespace: this._namespace });
+    this._console.info(`Registered app: ${name}`, {
+      namespace: this._namespace,
+    });
   }
 
   // ---------------------------
@@ -304,7 +310,7 @@ class AppsModule {
 
     const pid = this.#nextPid();
 
-    alias = (alias == null || alias === undefined) ? String(pid) : alias;
+    alias = alias == null || alias === undefined ? String(pid) : alias;
 
     if (registryApp.instances.has(alias)) {
       const pidExisting = this._instanceIndex.get(`${name}:${alias}`);
@@ -312,14 +318,35 @@ class AppsModule {
     }
 
     const app = new registryApp.AppClass(this._dependencies);
+    let executionInstance = app;
+
+    // Check Global Isolation Config
+    const isolation =
+      this._dependencies.config &&
+      this._dependencies.config.has('APPS_ISOLATION')
+        ? this._dependencies.config.get('APPS_ISOLATION')
+        : 'process';
+
+    if (isolation === 'threaded' && registryApp.path) {
+      this._console.info(`Spawning ${name} in Worker Thread`, {
+        namespace: this._namespace,
+      });
+      executionInstance = new ThreadedAppProxy({
+        name,
+        appPath: registryApp.path,
+        config: this._dependencies.config,
+        logger: this._console,
+      });
+    }
 
     const stateMachine = new ApplicationStateMachine({
-      app,
+      app: executionInstance,
       name,
       alias,
       state: null,
       logger: this._console,
-      makeContext: (phase, n, a, options) => this.#context(phase, n, a, options, pid),
+      makeContext: (phase, n, a, options) =>
+        this.#context(phase, n, a, options, pid),
     });
 
     // Boot → INACTIVE
@@ -329,9 +356,15 @@ class AppsModule {
       app,
       pid,
       stateMachine,
-      get state() { return stateMachine.state; },
-      get createdAt() { return stateMachine.createdAt; },
-      get lastTransitionAt() { return stateMachine.lastTransitionAt; },
+      get state() {
+        return stateMachine.state;
+      },
+      get createdAt() {
+        return stateMachine.createdAt;
+      },
+      get lastTransitionAt() {
+        return stateMachine.lastTransitionAt;
+      },
     };
 
     registryApp.instances.set(alias, instance);
@@ -341,7 +374,10 @@ class AppsModule {
 
     this._globalAliasIndex.set(alias, { name, alias });
 
-    this._console.success(`Spawned ${name}:${alias} [pid=${pid}] -> ${instance.state}`, { namespace: this._namespace });
+    this._console.success(
+      `Spawned ${name}:${alias} [pid=${pid}] -> ${instance.state}`,
+      { namespace: this._namespace },
+    );
 
     return { alias, pid };
   }
@@ -364,7 +400,7 @@ class AppsModule {
 
     this._console.success(
       `Activated ${name}:${alias} [pid=${instance.pid}] -> ${instance.state}`,
-      { namespace: this._namespace }
+      { namespace: this._namespace },
     );
   }
 
@@ -378,7 +414,7 @@ class AppsModule {
 
     this._console.success(
       `Deactivated ${name}:${alias} [pid=${instance.pid}] -> ${instance.state}`,
-      { namespace: this._namespace }
+      { namespace: this._namespace },
     );
   }
 
@@ -394,7 +430,7 @@ class AppsModule {
 
     this._console.success(
       `Suspended ${name}:${alias} [pid=${instance.pid}] -> ${instance.state}`,
-      { namespace: this._namespace }
+      { namespace: this._namespace },
     );
   }
 
@@ -408,7 +444,7 @@ class AppsModule {
 
     this._console.success(
       `Resumed ${name}:${alias} [pid=${instance.pid}] -> ${instance.state}`,
-      { namespace: this._namespace }
+      { namespace: this._namespace },
     );
   }
 
@@ -443,7 +479,10 @@ class AppsModule {
 
     this._globalAliasIndex.delete(alias);
 
-    this._console.success(`Stopped ${name}:${alias} [pid=${pid}] -> TERMINATED`, { namespace: this._namespace });
+    this._console.success(
+      `Stopped ${name}:${alias} [pid=${pid}] -> TERMINATED`,
+      { namespace: this._namespace },
+    );
   }
 
   /**
@@ -520,19 +559,24 @@ class AppsModule {
     if (!entry) throw new Error(`App not registered: ${name}`);
 
     const aliases = Array.from(entry.instances.keys());
-    if (aliases.length === 0) throw new Error(`No instances running for: ${name}`);
+    if (aliases.length === 0)
+      throw new Error(`No instances running for: ${name}`);
 
     let targetAlias = alias;
     if (!targetAlias) {
       if (aliases.length === 1) targetAlias = aliases[0];
-      else throw new Error(`Multiple instances for "${name}". Use alias or pid. Available: ${aliases.join(', ')}`);
+      else
+        throw new Error(
+          `Multiple instances for "${name}". Use alias or pid. Available: ${aliases.join(', ')}`,
+        );
     }
 
     const instance = entry.instances.get(targetAlias);
-    if (!instance) throw new Error(`App instance not running: ${name}:${targetAlias}`);
+    if (!instance)
+      throw new Error(`App instance not running: ${name}:${targetAlias}`);
 
     const raw = instance.app?.api;
-    return (typeof raw === 'function') ? raw.call(instance.app) : (raw || {});
+    return typeof raw === 'function' ? raw.call(instance.app) : raw || {};
   }
 
   /**
@@ -560,11 +604,17 @@ class AppsModule {
       try {
         const api = this.api(name, alias);
         const fn = api?.[method];
-        if (typeof fn !== 'function') throw new Error(`API method not found: ${method}()`);
+        if (typeof fn !== 'function')
+          throw new Error(`API method not found: ${method}()`);
         const value = fn(...args);
         results.push({ alias, pid: inst.pid, ok: true, value });
       } catch (err) {
-        results.push({ alias, pid: inst.pid, ok: false, error: err?.message || String(err) });
+        results.push({
+          alias,
+          pid: inst.pid,
+          ok: false,
+          error: err?.message || String(err),
+        });
       }
     }
     return results;
@@ -593,7 +643,10 @@ class AppsModule {
     if (!ref) throw new Error(`PID not found: ${pid}`);
     const appRegistry = this._registry.get(ref.name);
     const instance = appRegistry?.instances?.get(ref.alias);
-    if (!instance) throw new Error(`Instance not found for PID ${pid} (${ref.name}:${ref.alias})`);
+    if (!instance)
+      throw new Error(
+        `Instance not found for PID ${pid} (${ref.name}:${ref.alias})`,
+      );
     return { ...ref, instance };
   }
 
@@ -603,7 +656,7 @@ class AppsModule {
   apiByPid(pid) {
     const { instance } = this.#resolveByPid(pid);
     const raw = instance.app?.api;
-    return (typeof raw === 'function') ? raw.call(instance.app) : (raw || {});
+    return typeof raw === 'function' ? raw.call(instance.app) : raw || {};
   }
 
   /**
@@ -660,27 +713,39 @@ class AppsModule {
     try {
       const manifestPath = this._path.join(this._root, 'src', 'apps', 'index');
       const appDefinitions = require(manifestPath);
-      const appList = Array.isArray(appDefinitions) ? appDefinitions : (appDefinitions?.cache || []);
+      const appList = Array.isArray(appDefinitions)
+        ? appDefinitions
+        : appDefinitions?.cache || [];
 
       for (const appDefinition of appList) {
         if (!appDefinition?.name) {
           continue;
         }
-        const entry = this._registry.get(appDefinition.name) || { name: appDefinition.name, instances: new Map() };
+        const entry = this._registry.get(appDefinition.name) || {
+          name: appDefinition.name,
+          instances: new Map(),
+        };
 
         entry.route = appDefinition.route || entry.route;
         entry.autostart = !!appDefinition.autostart;
 
-        if (appDefinition.autostartMode === 'foreground' || appDefinition.autostartMode === 'background') {
+        if (
+          appDefinition.autostartMode === 'foreground' ||
+          appDefinition.autostartMode === 'background'
+        ) {
           entry.autostartMode = appDefinition.autostartMode;
         }
 
         this._registry.set(appDefinition.name, entry);
       }
 
-      this._console.info('Apps manifest loaded', { namespace: this._namespace });
+      this._console.info('Apps manifest loaded', {
+        namespace: this._namespace,
+      });
     } catch {
-      this._console.info('No Apps manifest found (optional)', { namespace: this._namespace });
+      this._console.info('No Apps manifest found (optional)', {
+        namespace: this._namespace,
+      });
     }
   }
 
@@ -691,16 +756,26 @@ class AppsModule {
           continue;
         }
 
-        const pathname = this._path.join(this._root, 'src', appRegistryEntry.route);
+        const pathname = this._path.join(
+          this._root,
+          'src',
+          appRegistryEntry.route,
+        );
         // eslint-disable-next-line import/no-dynamic-require, global-require
         const AppClass = require(pathname);
 
         appRegistryEntry.AppClass = AppClass;
+        appRegistryEntry.path = pathname; // Capture path for worker threads
         this._registry.set(name, appRegistryEntry);
 
-        this._console.info(`Loaded AppClass for ${name}`, { namespace: this._namespace });
+        this._console.info(`Loaded AppClass for ${name}`, {
+          namespace: this._namespace,
+        });
       } catch (err) {
-        this._console.error(`Failed loading AppClass for ${name} from "${appRegistryEntry.route}"`, { namespace: this._namespace });
+        this._console.error(
+          `Failed loading AppClass for ${name} from "${appRegistryEntry.route}"`,
+          { namespace: this._namespace },
+        );
         this._console.log(err);
       }
     }
@@ -718,7 +793,9 @@ class AppsModule {
         const { alias } = await this.spawn(name); // autogenera alias
         await this.activate(name, alias, { mode, reason: 'autostart' });
       } catch (err) {
-        this._console.error(`Autostart failed for ${name} -> ${err?.message}`, { namespace: this._namespace });
+        this._console.error(`Autostart failed for ${name} -> ${err?.message}`, {
+          namespace: this._namespace,
+        });
       }
     }
   }
@@ -762,7 +839,7 @@ class AppsModule {
       return [];
     }
 
-    return Array.from(entry.instances.values()).map(i => i.pid);
+    return Array.from(entry.instances.values()).map((i) => i.pid);
   }
 
   // ADD: rename alias across all indexes and registry
@@ -779,7 +856,8 @@ class AppsModule {
     if (!entry) throw new Error(`App not registered: ${name}`);
 
     const instance = entry.instances.get(oldAlias);
-    if (!instance) throw new Error(`App instance not running: ${name}:${oldAlias}`);
+    if (!instance)
+      throw new Error(`App instance not running: ${name}:${oldAlias}`);
 
     if (entry.instances.has(newAlias)) {
       throw new Error(`Alias already exists for app "${name}": ${newAlias}`);
@@ -811,14 +889,17 @@ class AppsModule {
     this._globalAliasIndex.delete(oldAlias);
     this._globalAliasIndex.set(newAlias, { name, alias: newAlias });
 
-    this._console.success(`Renamed ${name}:${oldAlias} -> ${newAlias} [pid=${pid}]`, { namespace: this._namespace });
+    this._console.success(
+      `Renamed ${name}:${oldAlias} -> ${newAlias} [pid=${pid}]`,
+      { namespace: this._namespace },
+    );
 
     return { name, oldAlias, newAlias, pid };
   }
 
   #makeApiHandle(name, alias, instance) {
     const raw = instance.app?.api;
-    const api = (typeof raw === 'function') ? raw.call(instance.app) : (raw || {});
+    const api = typeof raw === 'function' ? raw.call(instance.app) : raw || {};
     const self = this;
 
     return new Proxy(api, {
@@ -837,7 +918,9 @@ class AppsModule {
   #resolveByAliasSingle(alias) {
     const matches = this.#resolveByAlias(alias);
     if (matches.length !== 1) {
-      throw new Error(`Alias "${alias}" is ambiguous across apps. Use getByNameAndAlias(name, alias).`);
+      throw new Error(
+        `Alias "${alias}" is ambiguous across apps. Use getByNameAndAlias(name, alias).`,
+      );
     }
     return matches[0]; // { name, alias, instance }
   }

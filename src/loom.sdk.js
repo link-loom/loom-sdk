@@ -29,13 +29,37 @@ class Loom {
       await this.#setupInfrastructureModules();
       await this.#setupAdapterModules();
 
-      this._dependenciesModule.core.get().console.success('Engine loaded', { namespace: this._namespace });
+      this.#setupProcessSignals();
+
+      this._dependenciesModule.core
+        .get()
+        .console.success('Engine loaded', { namespace: this._namespace });
 
       return this._dependenciesModule.core.get();
     } catch (error) {
       console.log(error);
       process.exit();
     }
+  }
+
+  #setupProcessSignals() {
+    const handleSignal = (signal) => {
+      this._dependenciesModule.core
+        .get()
+        .console.info(`Received ${signal}, terminating...`, {
+          namespace: this._namespace,
+        });
+
+      // Automatic Performance Reporting
+      if (this._utilitiesModule && this._utilitiesModule.performance) {
+        this._utilitiesModule.performance.onTerminate();
+      }
+
+      process.exit(0);
+    };
+
+    process.on('SIGINT', () => handleSignal('SIGINT'));
+    process.on('SIGTERM', () => handleSignal('SIGTERM'));
   }
 
   async #setupCoreModules() {
@@ -93,7 +117,10 @@ class Loom {
       process.exit();
     }
 
-    this._dependenciesModule.core.add(this._dependenciesModule, 'DependenciesModule');
+    this._dependenciesModule.core.add(
+      this._dependenciesModule,
+      'DependenciesModule',
+    );
   }
 
   #setupUtilities() {
@@ -139,9 +166,7 @@ class Loom {
 
   #setupEventBus() {
     const { BusModule } = require('./adapters/events/bus.module');
-    this._eventBusModule = new BusModule(
-      this._dependenciesModule.core.get(),
-    );
+    this._eventBusModule = new BusModule(this._dependenciesModule.core.get());
     this._eventBusModule.setup();
 
     this._dependenciesModule.core.add(this._eventBusModule, 'eventBus');
@@ -167,7 +192,9 @@ class Loom {
   }
 
   #setupFunctions() {
-    const { FunctionsModule } = require('./adapters/functions/functions.module');
+    const {
+      FunctionsModule,
+    } = require('./adapters/functions/functions.module');
     this._functionsModule = new FunctionsModule(
       this._dependenciesModule.core.get(),
     );
@@ -186,7 +213,7 @@ class Loom {
 
   #setupModels() {
     const { ModelModule } = require('./adapters/http/model.module');
-    this._modelsModule = new ModelModule(this._dependenciesModule.core.get(),);
+    this._modelsModule = new ModelModule(this._dependenciesModule.core.get());
     this._modelsModule.setup();
 
     this._dependenciesModule.core.add(this._modelsModule, 'ModelsModule');
@@ -202,28 +229,41 @@ class Loom {
     this._eventBrokerModule.setup();
 
     this._dependenciesModule.core.add(this._eventBrokerModule, 'BrokerModule');
-    this._dependenciesModule.core.add(this._eventBrokerModule.webSocketServer, 'webSocketServer');
+    this._dependenciesModule.core.add(
+      this._eventBrokerModule.webSocketServer,
+      'webSocketServer',
+    );
   }
 
   #setupEventProducer() {
-    const { EventProducerModule } = require('./adapters/events/producer.module');
+    const {
+      EventProducerModule,
+    } = require('./adapters/events/producer.module');
     this._eventBrokerModule = new EventProducerModule(
       this._dependenciesModule.core.get(),
     );
 
     this._eventBrokerModule.setup();
 
-    this._dependenciesModule.core.add(this._eventBrokerModule, 'ProducerModule');
+    this._dependenciesModule.core.add(
+      this._eventBrokerModule,
+      'ProducerModule',
+    );
   }
 
   #setupEventConsumer() {
-    const { EventConsumerModule } = require('./adapters/events/consumer.module');
+    const {
+      EventConsumerModule,
+    } = require('./adapters/events/consumer.module');
     this._eventBrokerModule = new EventConsumerModule(
       this._dependenciesModule.core.get(),
     );
     this._eventBrokerModule.setup();
 
-    this._dependenciesModule.core.add(this._eventBrokerModule, 'ConsumerModule');
+    this._dependenciesModule.core.add(
+      this._eventBrokerModule,
+      'ConsumerModule',
+    );
   }
 
   async #setupDatabase() {
@@ -263,7 +303,7 @@ class Loom {
 
     const module = new PushModule({
       dependencies: this._dependenciesModule.core.get(),
-      dependencyInjector: this._dependenciesModule
+      dependencyInjector: this._dependenciesModule,
     });
 
     await module.setup();
@@ -275,7 +315,9 @@ class Loom {
   }
 
   async #setupObservability() {
-    const { ObservabilityModule } = require('./infrastructure/observability.module');
+    const {
+      ObservabilityModule,
+    } = require('./infrastructure/observability.module');
 
     const module = new ObservabilityModule({
       dependencies: this._dependenciesModule.core.get(),

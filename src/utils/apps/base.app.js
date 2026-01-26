@@ -22,6 +22,12 @@
  *   - onResume(ctx)      -> logs + resume(ctx)
  *   - onTerminate(ctx)   -> logs + terminate(ctx)
  *   - onSignal(sig,ctx)  -> logs + handleSignal(sig, ctx)
+ *
+ * API Contract
+ * ------------
+ * - Input: `ctx.options` contains the payload.
+ * - Output: `activateBackground` should return a DTO `{ ok: boolean, data: any, errors?: any[] }`.
+ *           Threaded Apps will automatically append `performance` metrics to this DTO.
  */
 
 class BaseApp {
@@ -33,7 +39,8 @@ class BaseApp {
     this._services = this._dependencies.services;
 
     // Namespace (default to class name if not provided)
-    this._namespace = this.constructor.namespace || `[App]::[${this.constructor.name}]`;
+    this._namespace =
+      this.constructor.namespace || `[App]::[${this.constructor.name}]`;
 
     // Public API holder
     this._api = null;
@@ -60,14 +67,14 @@ class BaseApp {
   // -------------------------
   // Virtual lifecycle methods
   // -------------------------
-  async setup(_ctx) { }
-  async activateForeground(_ctx) { }
-  async activateBackground(_ctx) { }
-  async deactivate(_ctx) { }
-  async suspend(_ctx) { }
-  async resume(_ctx) { }
-  async terminate(_ctx) { }
-  async handleSignal(_sig, _ctx) { }
+  async setup(_ctx) {}
+  async activateForeground(_ctx) {}
+  async activateBackground(_ctx) {}
+  async deactivate(_ctx) {}
+  async suspend(_ctx) {}
+  async resume(_ctx) {}
+  async terminate(_ctx) {}
+  async handleSignal(_sig, _ctx) {}
 
   // -------------------------
   // FSM Hook Adapters
@@ -80,17 +87,27 @@ class BaseApp {
   }
 
   async onActivate(mode, ctx) {
-    this._console.info('onActivate:start', { namespace: this._namespace, mode, ctx });
+    this._console.info('onActivate:start', {
+      namespace: this._namespace,
+      mode,
+      ctx,
+    });
     if (mode === 'foreground') {
       await this.activateForeground(ctx);
     } else {
       await this.activateBackground(ctx);
     }
-    this._console.success('onActivate:done', { namespace: this._namespace, mode });
+    this._console.success('onActivate:done', {
+      namespace: this._namespace,
+      mode,
+    });
   }
 
   async onDeactivate(ctx) {
-    this._console.info('onDeactivate:start', { namespace: this._namespace, ctx });
+    this._console.info('onDeactivate:start', {
+      namespace: this._namespace,
+      ctx,
+    });
     await this.deactivate(ctx);
     this._console.success('onDeactivate:done', { namespace: this._namespace });
   }
@@ -108,7 +125,10 @@ class BaseApp {
   }
 
   async onTerminate(ctx) {
-    this._console.info('onTerminate:start', { namespace: this._namespace, ctx });
+    this._console.info('onTerminate:start', {
+      namespace: this._namespace,
+      ctx,
+    });
     await this.terminate(ctx);
     this._console.success('onTerminate:done', { namespace: this._namespace });
   }

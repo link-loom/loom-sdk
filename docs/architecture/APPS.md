@@ -152,3 +152,65 @@ module.exports = MyApp;
 ```
 
 **Restriction**: You cannot access variables from the Main Process (e.g., `global.server`). You must rely on the passed `ctx` and `config`.
+
+---
+
+## 7. API Contract
+
+To ensure interoperability and predictable behavior, all Apps must adhere to the following contract regarding Input Payloads and Return DTOs.
+
+### 7.1 Input Payload (Execution Context)
+
+When an App is executed (via `spawn` or `activate`), it receives a **Context (`ctx`)**. The execution payload is contained within `ctx.options`.
+
+**Structure:**
+
+```javascript
+{
+  phase: 'activate',     // Lifecycle phase
+  name: 'my-app',        // App Name
+  alias: 'worker-001',   // Instance Alias
+
+  // THE COMPUTE PAYLOAD
+  options: {
+    // Custom data passed by the caller
+    cmd: 'process-file',
+    filePath: '/tmp/data.csv',
+    ...
+  },
+
+  logger: { ... }        // Remote logger proxy
+}
+```
+
+### 7.2 Output DTO (Return Value)
+
+Every App **MUST** return a DTO (Data Transfer Object) upon completion of its primary task (usually `activateBackground`).
+
+**Standard Structure:**
+
+```javascript
+{
+  // 1. Functional Result
+  ok: true,              // Success flag
+  data: { ... },         // Business logic result
+  errors: [],            // List of errors if any
+
+  // 2. Performance Metrics (Automatically injected by SDK)
+  performance: {
+    durationMs: "1250.40",
+    cpu: {
+      userMicros: 8500,
+      systemMicros: 3200,
+      utilization: "0.95%"
+    },
+    memory: {
+      heapUsedDiff: "15.4 MB",
+      externalDiff: "0 B",
+      totalHeap: "32.1 MB"
+    }
+  }
+}
+```
+
+> **Note**: For Threaded Apps, the `performance` object is automatically appended to your return value by the `ThreadedAppProxy`. You do not need to calculate it manually.

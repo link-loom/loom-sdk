@@ -8,6 +8,8 @@ const SearchUtil = require('../utils/search.util');
 const EncoderUtil = require('../utils/encoder.util');
 const ValidatorUtil = require('../utils/validator.util');
 
+const PerformanceUtil = require('../utils/performance.util');
+
 class UtilitiesModule {
   constructor(dependencies) {
     /* Base Properties */
@@ -28,6 +30,7 @@ class UtilitiesModule {
     this._searchUtil = new SearchUtil(this._dependencies);
     this._encoderUtil = new EncoderUtil(this._dependencies);
     this._cryptoUtil = new CryptoUtil(this._dependencies);
+    this._performanceUtil = new PerformanceUtil(this._dependencies);
   }
 
   setup() {
@@ -68,6 +71,10 @@ class UtilitiesModule {
 
   get event() {
     return this._eventUtil;
+  }
+
+  get performance() {
+    return this._performanceUtil;
   }
 }
 

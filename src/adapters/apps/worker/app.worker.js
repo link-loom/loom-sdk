@@ -1,16 +1,15 @@
 const { parentPort, workerData } = require('worker_threads');
+const PerformanceUtil = require('../../../utils/performance.util');
 
 // 1. Unpack Data
 const { name, path, config } = workerData;
 
 // 2. Mock Dependencies
-// Since we are isolated, we can't share complex objects.
-// We reconstruct a minimal dependencies object.
 const dependencies = {
   config: {
     has: (key) => config && config[key] !== undefined,
     get: (key) => (config ? config[key] : undefined),
-    ...config, // enable direct access if needed
+    ...config,
   },
   console: {
     log: (msg, meta) =>
@@ -26,8 +25,13 @@ const dependencies = {
   },
 };
 
+const state = {
+  snapshot: null,
+};
+
 try {
   // 3. Load App Class
+  // eslint-disable-next-line import/no-dynamic-require, global-require
   const AppClass = require(path);
 
   // 4. Instantiate
@@ -37,6 +41,7 @@ try {
   parentPort.on('message', async (message) => {
     try {
       if (message.cmd === 'activateBackground') {
+        state.snapshot = PerformanceUtil.start();
         if (app.activateBackground) {
           await app.activateBackground(message.ctx);
         }
@@ -49,8 +54,20 @@ try {
         if (app.onTerminate) {
           await app.onTerminate(message.ctx);
         }
-        parentPort.postMessage({ type: 'result', cmd: 'stop', status: 'ok' });
-        process.exit(0);
+
+        let report = null;
+        if (state.snapshot) {
+          report = PerformanceUtil.measure(state.snapshot);
+        }
+
+        parentPort.postMessage({
+          type: 'result',
+          cmd: 'stop',
+          status: 'ok',
+          performance: report,
+        });
+        // We do not exit here; let the parent terminate us or we exit after flushing.
+        // process.exit(0);
       }
     } catch (err) {
       parentPort.postMessage({

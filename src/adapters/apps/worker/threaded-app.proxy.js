@@ -47,7 +47,19 @@ class ThreadedAppProxy {
       // Resolve pending promise
       // Simplified: we assume one active command at a time for this PoC
       if (this._resolveCmd) {
-        this._resolveCmd();
+        if (msg.performance) {
+          this.logger.info(`[Performance] ${this.name} Report`, {
+            meta: msg.performance,
+            namespace: `[Loom]::[Apps]::[${this.name}]`,
+          });
+        }
+
+        const response = msg.data || {};
+        if (msg.performance) {
+          response.performance = msg.performance;
+        }
+
+        this._resolveCmd(response);
         this._resolveCmd = null;
       }
     } else if (msg.type === 'error') {
@@ -58,6 +70,11 @@ class ThreadedAppProxy {
     }
   }
 
+  /**
+   * Activates the app in background mode.
+   * @param {Object} ctx - The execution context.
+   * @returns {Promise<Object>} Resolves with the App's result DTO + `performance` metrics.
+   */
   async activateBackground(ctx) {
     return new Promise((resolve, reject) => {
       this._resolveCmd = resolve;

@@ -14,6 +14,7 @@ class Loom {
     this._authModule = {};
     this._serviceModule = {};
     this._apiModule = {};
+    this._appsModule = {};
     this._functionsModule = {};
     this._eventBrokerModule = {};
     this._eventBrokerModule = {};
@@ -67,6 +68,8 @@ class Loom {
     this.#setupServices();
 
     this.#setupFunctions();
+
+    this.#setupApps();
 
     this.#setupApi();
 
@@ -173,11 +176,17 @@ class Loom {
     this._dependenciesModule.core.add(this._functionsModule, 'functions');
   }
 
+  #setupApps() {
+    const { AppsModule } = require('./adapters/apps/apps.module');
+    this._appsModule = new AppsModule(this._dependenciesModule.core.get());
+    this._appsModule.setup();
+
+    this._dependenciesModule.core.add(this._appsModule, 'AppsModule');
+  }
+
   #setupModels() {
     const { ModelModule } = require('./adapters/http/model.module');
-    this._modelsModule = new ModelModule(
-      this._dependenciesModule.core.get(),
-    );
+    this._modelsModule = new ModelModule(this._dependenciesModule.core.get(),);
     this._modelsModule.setup();
 
     this._dependenciesModule.core.add(this._modelsModule, 'ModelsModule');

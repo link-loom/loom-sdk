@@ -340,13 +340,13 @@ class AppsModule {
     }
 
     const stateMachine = new ApplicationStateMachine({
+      ...this._dependencies,
       app: executionInstance,
       name,
       alias,
-      state: null,
-      logger: this._console,
-      makeContext: (phase, n, a, options) =>
-        this.#context(phase, n, a, options, pid),
+      initialState: null,
+      makeContext: (phase, contextName, contextAlias, options) =>
+        this.#context(phase, contextName, contextAlias, options, pid),
     });
 
     // Boot → INACTIVE

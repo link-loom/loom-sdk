@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **"Ephemeral" Apps** system is a runtime within Link Loom designed to safely execute untrusted or resource-intensive business logic. It provides **"Bare-Metal" Isolation** by running each App instance in a dedicated Execution Unit (Worker Thread) separate from the Main Event Loop.
+The **Apps** system is a runtime within Link Loom designed to safely execute untrusted or resource-intensive business logic. It provides **"Bare-Metal" Isolation** by running each App instance in a dedicated Execution Unit (Worker Thread) separate from the Main Event Loop.
 
 This architecture ensures:
 
@@ -95,6 +95,27 @@ An App moves through a strict State Machine (`ApplicationStateMachine`).
 - **ACTIVE_BACKGROUND**: Performing work. `onActivate()` running.
 - **TERMINATING**: Shutdown sequence initiated. `onTerminate()` called.
 - **TERMINATED**: Worker killed via Guillotine. References dropped.
+
+### Class Structure (Code Standard)
+
+The `ApplicationStateMachine` follows strict Link Loom Dependency Injection patterns:
+
+```javascript
+class ApplicationStateMachine {
+  constructor(dependencies) {
+    /* Base Properties */
+    this._dependencies = dependencies;
+    this._console = dependencies.console;
+
+    /* Custom Properties */
+    this._app = dependencies.app;
+    // ...
+
+    /* Assignments */
+    this._namespace = `[Loom]::[Apps]::[${this._name}:${this._alias}]`;
+  }
+}
+```
 
 ---
 

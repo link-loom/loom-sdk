@@ -117,23 +117,48 @@ function T(from, on, to, effect) {
 }
 
 // Boot
-T(null, ApplicationEvents.CREATE, ApplicationStates.INACTIVE, async (app, ctx) => {
-  if (typeof app.onCreate === 'function') await app.onCreate(ctx);
-});
+T(
+  null,
+  ApplicationEvents.CREATE,
+  ApplicationStates.INACTIVE,
+  async (app, ctx) => {
+    if (typeof app.onCreate === 'function') await app.onCreate(ctx);
+  },
+);
 
 // INACTIVE → ACTIVE_*
-T(ApplicationStates.INACTIVE, ApplicationEvents.ACTIVATE_FOREGROUND, ApplicationStates.ACTIVE_FOREGROUND, async (app, ctx) => {
-  if (typeof app.onActivate === 'function') await app.onActivate('foreground', ctx);
-});
-T(ApplicationStates.INACTIVE, ApplicationEvents.ACTIVATE_BACKGROUND, ApplicationStates.ACTIVE_BACKGROUND, async (app, ctx) => {
-  if (typeof app.onActivate === 'function') await app.onActivate('background', ctx);
-});
+T(
+  ApplicationStates.INACTIVE,
+  ApplicationEvents.ACTIVATE_FOREGROUND,
+  ApplicationStates.ACTIVE_FOREGROUND,
+  async (app, ctx) => {
+    if (typeof app.onActivate === 'function')
+      await app.onActivate('foreground', ctx);
+  },
+);
+T(
+  ApplicationStates.INACTIVE,
+  ApplicationEvents.ACTIVATE_BACKGROUND,
+  ApplicationStates.ACTIVE_BACKGROUND,
+  async (app, ctx) => {
+    if (typeof app.onActivate === 'function')
+      await app.onActivate('background', ctx);
+  },
+);
 
 // ACTIVE_* → INACTIVE
-for (const s of [ApplicationStates.ACTIVE_FOREGROUND, ApplicationStates.ACTIVE_BACKGROUND]) {
-  T(s, ApplicationEvents.DEACTIVATE, ApplicationStates.INACTIVE, async (app, ctx) => {
-    if (typeof app.onDeactivate === 'function') await app.onDeactivate(ctx);
-  });
+for (const s of [
+  ApplicationStates.ACTIVE_FOREGROUND,
+  ApplicationStates.ACTIVE_BACKGROUND,
+]) {
+  T(
+    s,
+    ApplicationEvents.DEACTIVATE,
+    ApplicationStates.INACTIVE,
+    async (app, ctx) => {
+      if (typeof app.onDeactivate === 'function') await app.onDeactivate(ctx);
+    },
+  );
 }
 
 // Any non-terminal → SUSPENDED; SUSPENDED → INACTIVE
@@ -142,13 +167,23 @@ for (const s of [
   ApplicationStates.ACTIVE_FOREGROUND,
   ApplicationStates.ACTIVE_BACKGROUND,
 ]) {
-  T(s, ApplicationEvents.SUSPEND, ApplicationStates.SUSPENDED, async (app, ctx) => {
-    if (typeof app.onSuspend === 'function') await app.onSuspend(ctx);
-  });
+  T(
+    s,
+    ApplicationEvents.SUSPEND,
+    ApplicationStates.SUSPENDED,
+    async (app, ctx) => {
+      if (typeof app.onSuspend === 'function') await app.onSuspend(ctx);
+    },
+  );
 }
-T(ApplicationStates.SUSPENDED, ApplicationEvents.RESUME, ApplicationStates.INACTIVE, async (app, ctx) => {
-  if (typeof app.onResume === 'function') await app.onResume(ctx);
-});
+T(
+  ApplicationStates.SUSPENDED,
+  ApplicationEvents.RESUME,
+  ApplicationStates.INACTIVE,
+  async (app, ctx) => {
+    if (typeof app.onResume === 'function') await app.onResume(ctx);
+  },
+);
 
 // STOP lifecycle (two-step: TERMINATING → TERMINATED)
 for (const s of [
@@ -157,14 +192,26 @@ for (const s of [
   ApplicationStates.ACTIVE_BACKGROUND,
   ApplicationStates.SUSPENDED,
 ]) {
-  T(s, ApplicationEvents.STOP, ApplicationStates.TERMINATING, async (app, ctx) => {
-    const force = !!ctx?.options?.force;
-    if (!force && typeof app.onTerminate === 'function') {
-      await app.onTerminate(ctx);
-    }
-  });
+  T(
+    s,
+    ApplicationEvents.STOP,
+    ApplicationStates.TERMINATING,
+    async (app, ctx) => {
+      const force = !!ctx?.options?.force;
+      if (!force && typeof app.onTerminate === 'function') {
+        await app.onTerminate(ctx);
+      }
+    },
+  );
 }
-T(ApplicationStates.TERMINATING, ApplicationEvents.STOP, ApplicationStates.TERMINATED, async (_app, _ctx) => { /* no-op */ });
+T(
+  ApplicationStates.TERMINATING,
+  ApplicationEvents.STOP,
+  ApplicationStates.TERMINATED,
+  async (_app, _ctx) => {
+    /* no-op */
+  },
+);
 
 // SIGNAL passthrough (no state change)
 for (const s of [
@@ -187,7 +234,14 @@ for (const s of [
   ApplicationStates.SUSPENDED,
   ApplicationStates.TERMINATING,
 ]) {
-  T(s, ApplicationEvents.FAIL, ApplicationStates.CRASHED, async (_app, _ctx) => { /* no-op */ });
+  T(
+    s,
+    ApplicationEvents.FAIL,
+    ApplicationStates.CRASHED,
+    async (_app, _ctx) => {
+      /* no-op */
+    },
+  );
 }
 
 /**
@@ -206,28 +260,57 @@ class ApplicationStateMachine extends EventEmitter {
    * @param {string} params.alias                   - Instance alias.
    * @param {string|null} [params.state=null]       - Initial state (null before CREATE).
    */
-  constructor({ app, makeContext, logger = console, name, alias, state = null }) {
+  constructor(dependencies) {
     super();
-    this.app = app;
-    this.name = name;
-    this.alias = alias;
-    this.logger = logger;
 
-    this.state = state; // null → before CREATE
+    /* Base Properties */
+    this._dependencies = dependencies;
+    this._console = dependencies.console;
+
+    /* Custom Properties */
+    this.app = dependencies.app;
+    this.name = dependencies.name;
+    this.alias = dependencies.alias;
+
+    this.state = dependencies.state; // null → before CREATE
     this.createdAt = Date.now();
     this.lastTransitionAt = Date.now();
+
+    /* Assigments */
+    this._namespace = `[Loom]::[Apps]::[${this._name}:${this._alias}]`;
   }
 
   /** Public helpers (semantic) */
-  async create(options) { return this.transition(ApplicationEvents.CREATE, options); }
-  async activateForeground(options) { return this.transition(ApplicationEvents.ACTIVATE_FOREGROUND, options); }
-  async activateBackground(options) { return this.transition(ApplicationEvents.ACTIVATE_BACKGROUND, options); }
-  async deactivate(options) { return this.transition(ApplicationEvents.DEACTIVATE, options); }
-  async suspend(options) { return this.transition(ApplicationEvents.SUSPEND, options); }
-  async resume(options) { return this.transition(ApplicationEvents.RESUME, options); }
-  async stop(options) { return this.transition(ApplicationEvents.STOP, options); }
-  async signal(sig, options) { return this.transition(ApplicationEvents.SIGNAL, { ...(options || {}), sig }); }
-  async fail(options) { return this.transition(ApplicationEvents.FAIL, options); }
+  async create(options) {
+    return this.transition(ApplicationEvents.CREATE, options);
+  }
+  async activateForeground(options) {
+    return this.transition(ApplicationEvents.ACTIVATE_FOREGROUND, options);
+  }
+  async activateBackground(options) {
+    return this.transition(ApplicationEvents.ACTIVATE_BACKGROUND, options);
+  }
+  async deactivate(options) {
+    return this.transition(ApplicationEvents.DEACTIVATE, options);
+  }
+  async suspend(options) {
+    return this.transition(ApplicationEvents.SUSPEND, options);
+  }
+  async resume(options) {
+    return this.transition(ApplicationEvents.RESUME, options);
+  }
+  async stop(options) {
+    return this.transition(ApplicationEvents.STOP, options);
+  }
+  async signal(sig, options) {
+    return this.transition(ApplicationEvents.SIGNAL, {
+      ...(options || {}),
+      sig,
+    });
+  }
+  async fail(options) {
+    return this.transition(ApplicationEvents.FAIL, options);
+  }
 
   /**
    * Core transition executor: validates (from,event), runs effect, updates state, emits audit.
@@ -240,8 +323,14 @@ class ApplicationStateMachine extends EventEmitter {
     const entry = TRANSITIONS.get(key);
 
     // Allow TERMINATING --STOP--> TERMINATED as a second step
-    if (!entry && from === ApplicationStates.TERMINATING && event === ApplicationEvents.STOP) {
-      const last = TRANSITIONS.get(`${ApplicationStates.TERMINATING}::${ApplicationEvents.STOP}`);
+    if (
+      !entry &&
+      from === ApplicationStates.TERMINATING &&
+      event === ApplicationEvents.STOP
+    ) {
+      const last = TRANSITIONS.get(
+        `${ApplicationStates.TERMINATING}::${ApplicationEvents.STOP}`,
+      );
       if (last) return this.#apply(last, options);
     }
 
@@ -266,18 +355,34 @@ class ApplicationStateMachine extends EventEmitter {
       this.lastTransitionAt = Date.now();
 
       this.logger?.info?.(
-        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ ${next}`
+        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ ${next}`,
+        { namespace: this._namespace },
       );
-      this.emit('transition', { name: this.name, alias: this.alias, from: prev, on: entry.on, to: next, at: this.lastTransitionAt });
+      this.emit('transition', {
+        name: this.name,
+        alias: this.alias,
+        from: prev,
+        on: entry.on,
+        to: next,
+        at: this.lastTransitionAt,
+      });
       return this.state;
     } catch (err) {
       // Any hook failure moves to CRASHED
       this.state = ApplicationStates.CRASHED;
       this.lastTransitionAt = Date.now();
       this.logger?.error?.(
-        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ CRASHED :: ${err?.message}`
+        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ CRASHED :: ${err?.message}`,
+        { namespace: this._namespace },
       );
-      this.emit('transition', { name: this.name, alias: this.alias, from: prev, on: entry.on, to: ApplicationStates.CRASHED, error: err });
+      this.emit('transition', {
+        name: this.name,
+        alias: this.alias,
+        from: prev,
+        on: entry.on,
+        to: ApplicationStates.CRASHED,
+        error: err,
+      });
       throw err;
     }
   }
@@ -300,23 +405,36 @@ class ApplicationStateMachine extends EventEmitter {
   }
 
   /** Backward compatibility alias */
-  get makeContext() { return this._makeContext; }
-  set makeContext(fn) { this._makeContext = fn; }
+  get makeContext() {
+    return this._makeContext;
+  }
+  set makeContext(fn) {
+    this._makeContext = fn;
+  }
 }
 
 /** Phase inference strictly for documentation/logging */
 function inferPhase(event) {
   switch (event) {
-    case ApplicationEvents.CREATE: return 'create';
+    case ApplicationEvents.CREATE:
+      return 'create';
     case ApplicationEvents.ACTIVATE_FOREGROUND:
-    case ApplicationEvents.ACTIVATE_BACKGROUND: return 'activate';
-    case ApplicationEvents.DEACTIVATE: return 'deactivate';
-    case ApplicationEvents.SUSPEND: return 'suspend';
-    case ApplicationEvents.RESUME: return 'resume';
-    case ApplicationEvents.STOP: return 'terminate';
-    case ApplicationEvents.SIGNAL: return 'signal';
-    case ApplicationEvents.FAIL: return 'terminate';
-    default: return 'unknown';
+    case ApplicationEvents.ACTIVATE_BACKGROUND:
+      return 'activate';
+    case ApplicationEvents.DEACTIVATE:
+      return 'deactivate';
+    case ApplicationEvents.SUSPEND:
+      return 'suspend';
+    case ApplicationEvents.RESUME:
+      return 'resume';
+    case ApplicationEvents.STOP:
+      return 'terminate';
+    case ApplicationEvents.SIGNAL:
+      return 'signal';
+    case ApplicationEvents.FAIL:
+      return 'terminate';
+    default:
+      return 'unknown';
   }
 }
 

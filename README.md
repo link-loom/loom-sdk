@@ -29,6 +29,7 @@ This is not merely a web framework. Link Loom operates as the **Application Back
 ### Architecture & Concepts
 
 - [**Core Concepts**](docs/architecture/core-concepts.md) — The Runtime Engine, Lifecycle State Machine, and Dependency Graph.
+- [**The Boot Lifecycle**](docs/architecture/lifecycle.md) — System Events and Initialization Sequence.
 - [**Architectural Adapters**](docs/adapters/README.md) — Enabling Event-Driven, Isolated, and Modular architectures.
 - [**LLM Context / AI Agents**](docs/llm-context.md) — Technical definitions for AI coding assistants.
 

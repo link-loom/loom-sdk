@@ -2,124 +2,157 @@
 
 > **Namespace**: `[Loom]::[Event System]` > **Module**: `BusModule` (Internal) / `BrokerModule` (External)
 
-The **Events Adapter** is the nervous system of the Link Loom architecture. It provides two distinct layers of communication: **Internal Reactivity** (Observer Pattern) and **Distributed Messaging** (Broker Pattern).
+The **Events Adapter** is the nervous system of the Link Loom architecture. It implementation follows a strict **Event-Driven Architecture (EDA)** that scales from simple in-process reactivity to complex, distributed event meshes.
 
-## 1. Layer 1: The Internal Bus (In-Memory)
+## 1. Layers of Communication
 
-- **Scope**: Single Process (Instance).
-- **Mechanism**: Node.js `EventEmitter`.
-- **Purpose**: Decoupling modules within the same service (e.g., API $\to$ Functions).
+Loom provides two distinct layers, preventing the "Distributed Monolith" anti-pattern by strictly separating local coupling from domain decoupling.
 
-(See [Internal Consumer Pattern](#internal-consumer-pattern) below).
+| Layer       | Component           | Mechanism            | Scope            | Latency      |
+| :---------- | :------------------ | :------------------- | :--------------- | :----------- |
+| **Layer 1** | **Internal Bus**    | `EventEmitter`       | Single Process   | Microseconds |
+| **Layer 2** | **External Broker** | `RabbitMQ` / `Redis` | External Cluster | Milliseconds |
 
-## 2. Layer 2: The External Broker (Distributed)
+---
 
-- **Scope**: Cluster / Global.
-- **Mechanism**: `RabbitMQ` / `Redis` / `NATS` (via Providers).
-- **Purpose**: Enabling **Machine-to-Machine (M2M)** communication and **Real-Time Systems** (Chat, Notifications).
+## 2. Layer 2: The Broker Architecture (Kafka Pattern)
 
-### Architecture: The "Loom Network"
+For external communication, Link Loom adopts the **Producer-Broker-Consumer** pattern found in systems like Apache Kafka. This architecture allows for massive horizontal scaling and "Location Transparency"—neither the sender nor the receiver needs to know about the other's existence or physical location.
 
-In a microservices or distributed environment, multiple Link Loom instances ("Nodes") communicate via the Broker.
+### The Three Roles
+
+#### Role A: The Producer ("The Publisher")
+
+- **Definition**: Any service or component that emits a signal that "something changed".
+- **Responsibility**: Generating the event payload and assigning it a **Topic** and **Routing Key**.
+- **Location**: `src/events/producer/`
+- **Behavior**: Fire-and-forget (from the code's perspective), although the SDK handles delivery guarantees to the Broker.
+
+#### Role B: The Broker ("The Hub")
+
+- **Definition**: The infrastructure piece (RabbitMQ, Redis Stream, Kafka) that governs the message flow.
+- **Responsibility**:
+  - **Durability**: Ensuring messages aren't lost if consumers are down.
+  - **Routing**: Distributing one message to one (P2P) or many (Pub/Sub) consumers.
+  - **Buffering**: Handling backpressure when producers outpace consumers.
+- **Abstraction**: In Loom, you never touch the Broker driver directly; you interact with the `BrokerModule`.
+
+#### Role C: The Consumer ("The Subscriber")
+
+- **Definition**: A worker that reacts to specific events.
+- **Responsibility**: Executing a side-effect (DB write, Email send) and acknowledging the message.
+- **Location**: `src/events/consumer/`
+- **Behavior**:
+  - **ACK**: "I finished processing. Remove from queue."
+  - **NACK**: "I failed. Retry later." (Reliability).
+
+---
+
+## 3. Architecture Diagrams
+
+### Flow 1: Simple Decoupling (Pub/Sub)
+
+A classic "One-to-Many" broadcast.
 
 ```mermaid
-graph TD
-    User((User)) -- HTTP --> NodeA[Loom Service A]
-    NodeA -- "Publish: order.created" --> Broker{Message Broker}
-    Broker -- "Route: order.#" --> NodeB[Loom Service B]
-    Broker -- "Route: order.#" --> NodeC[Loom Service C]
-    NodeB -- "Process" --> DB[(Database)]
-    NodeC -- "Push Notification" --> User
+graph LR
+    subgraph "Service A (Producer)"
+        API[API Endpoint] -->|1. Emits| P[Producer Module]
+    end
+
+    P -->|2. Publish 'user.created'| B{MESSAGE BROKER}
+
+    subgraph "Service B (Consumer)"
+        B -->|3. Push| C1[Email Consumer]
+        C1 -->|4. Send| SMTP((SMTP))
+    end
+
+    subgraph "Service C (Consumer)"
+        B -->|3. Push| C2[Analytics Consumer]
+        C2 -->|4. Write| DB[(Data Warehouse)]
+    end
 ```
 
-## 3. The Broker Manifest (`src/events/index.js`)
+### Flow 2: Complex Chat System (The "Loom Network")
 
-Unlike the internal bus which is ad-hoc, the Broker requires a strict **Declarative Manifest**. This defines the topology of your event network.
+Real-time routing where the Broker acts as the synchronization layer for a cluster of WebSocket nodes.
 
-### Structure
+```mermaid
+sequenceDiagram
+    participant UserA
+    participant Node1 as Loom Node 1
+    participant Broker as The Broker
+    participant Node2 as Loom Node 2
+    participant UserB
+
+    UserA->>Node1: Send "Hello" (HTTP/WS)
+    Note over Node1: Node 1 acts as PRODUCER
+    Node1->>Broker: Publish { to: "UserB", text: "Hello" }
+
+    Note over Broker: Route to Topic 'chat.messages'
+    Broker->>Node1: Broadcast Event
+    Broker->>Node2: Broadcast Event
+
+    Note over Node1, Node2: Nodes act as CONSUMERS
+    Node1->>Node1: Check: Is UserB connected? (No)
+    Node2->>Node2: Check: Is UserB connected? (Yes)
+
+    Node2->>UserB: Push "Hello" (WebSocket)
+```
+
+---
+
+## 4. The Event Manifest (`src/events/index.js`)
+
+To keep this complexity manageable, Loom requires a strict **Declarative Manifest**. This file acts as the "Contract" for your service's event IO.
 
 ```javascript
-/* src/events/index.js */
 module.exports = {
-  // 1. PRODUCER: What can I say?
+  // ROLE: PRODUCER
   producer: {
-    topics: [{ name: 'chatbot' }, { name: 'billing' }],
+    topics: [{ name: 'billing' }], // Infrastructure provisioning
     events: [
       {
-        name: 'app.chat.message', // The Routing Key
-        command: '#send', // Semantic Action
-        topics: ['chatbot'], // Topic Binding
-        filename: '/events/producer/chat/message.event', // Validation Schema
+        name: 'app.order.created', // Routing Key
+        topics: ['billing'], // Destination Topic
+        filename: '/events/producer/order/created.event', // Schema
       },
     ],
   },
 
-  // 2. CONSUMER: What do I listen to?
+  // ROLE: CONSUMER
   consumer: {
     events: [
       {
-        name: 'app.billing.invoice', // Listen for this key
-        command: '#paid', // Filter for this action
-        topics: ['billing'], // Subscribe to this topic
-        filename: '/events/consumer/billing/invoice-paid.event', // Handler Logic
+        name: 'app.order.refunded', // Listening for this
+        topics: ['billing'], // On this channel
+        filename: '/events/consumer/order/refunded.event', // Using this Logic
       },
     ],
   },
 };
 ```
 
-### Key Concepts
+## 5. Consumer Implementation Pattern
 
-- **Topic**: A logical channel (e.g., `chatbot`). Services subscribe to Topics.
-- **Event Name (Routing Key)**: A hierarchical dot-separated identifier (e.g., `app.chat.message`).
-- **Command**: A suffix used to differentiate intent (e.g., `#request` vs `#response`).
-
-## 4. Use Case: Real-Time Chat System
-
-The Broker is essential for Chat architectures where users might be connected to different HTTP/WebSocket nodes.
-
-**The Flow:**
-
-1.  **User A** sends message "Hello" to `Node 1` via HTTP/WS.
-2.  `Node 1` **Produces** `app.chat.message` to the `chatbot` topic.
-3.  **The Broker** broadcasts this message to _all_ subscribed nodes (`Node 1`, `Node 2`, `Node 3`).
-4.  Each Node **Consumes** the event.
-5.  Each Node checks if the recipient (User B) is connected to it.
-6.  `Node 3` finds User B and pushes the message via WebSocket.
-
-```mermaid
-sequenceDiagram
-    participant UserA
-    participant Node1
-    participant Broker
-    participant Node2
-    participant UserB
-
-    UserA->>Node1: Send "Hello"
-    Node1->>Broker: Publish { to: "UserB", text: "Hello" }
-    Broker->>Node1: Broadcast
-    Broker->>Node2: Broadcast
-    Note over Node1: "UserB not here"
-    Note over Node2: "Found UserB!"
-    Node2->>UserB: Push "Hello"
-```
-
-## 5. Machine-to-Machine (M2M)
-
-For backend communication (e.g., Orchestrator triggering a Worker), rely on the Broker to ensure **Location Transparency**. Pass DTOs (Data Transfer Objects), not shared memory references.
-
-### Consumer Implementation
-
-External consumers differ from internal ones. They receive the **Message Context**.
+Consumers in Loom receive a `context` object containing the payload and control functions, mirroring Kafka's acknowledgment mechanisms.
 
 ```javascript
-class ChatConsumer {
+/* src/events/consumer/order/refunded.consumer.js */
+class RefundConsumer {
+  /**
+   * @param {Object} input
+   * @param {Object} input.payload - The data sent by the producer
+   * @param {Function} input.ack - Positive Acknowledgement (Commit)
+   * @param {Function} input.nack - Negative Acknowledgement (Re-queue)
+   */
   async run({ payload, ack, nack }) {
     try {
-      await this.processMessage(payload);
-      ack(); // Acknowledge receipt (removes from Queue)
-    } catch (e) {
-      nack(); // Negative Ack (re-queue or DLQ)
+      await this.processRefund(payload);
+      ack(); // Critical: Tell Broker we are done
+    } catch (error) {
+      console.error(error);
+      nack(); // Critical: Tell Broker to retry
     }
   }
 }

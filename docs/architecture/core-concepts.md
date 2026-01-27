@@ -50,6 +50,20 @@ class MyService {
 }
 ```
 
+### The Default Injection Graph
+
+When `loom.ignite()` completes, the `dependencies` object contains a standardized set of core modules available to every component. This is not a dynamic bag of properties; it is a **Structured Context**.
+
+| Property                 | Module             | Purpose                                                                              |
+| :----------------------- | :----------------- | :----------------------------------------------------------------------------------- |
+| `dependencies.config`    | **Settings**       | The resolved configuration tree (merged from JSON + Cloud Vault). Read-only.         |
+| `dependencies.console`   | **Console**        | The namespaced logging interface.                                                    |
+| `dependencies.utilities` | **Utilities**      | A suite of pure functions: `.crypto` (encryption), `.io` (fs), `.validator` (input). |
+| `dependencies.database`  | **Infrastructure** | The persistence layer. Access raw drivers via `.client` (e.g., Mongoose, Sequelize). |
+| `dependencies.eventBus`  | **Adapter**        | The internal synchronous/asynchronous event emitter for decoupling logic.            |
+
+> **Immutability Note**: The core references in `dependencies` are immutable after the bootstrap phase to prevent runtime tampering.
+
 This makes testing easier (you can mock `dependencies`) and ensures that every part of the system shares the same context (e.g., Request ID tracing).
 
 ## 3. The Lifecycle

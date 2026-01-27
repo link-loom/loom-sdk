@@ -3,38 +3,38 @@
 [![GitHub license](https://img.shields.io/github/license/link-loom/loom-sdk.svg)](https://github.com/link-loom/loom-sdk/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/@link-loom/sdk)
 
-**The Runtime Orchestrator for Governed Node.js Ecosystems.**
+**The Runtime Orchestrator for Node.js Ecosystems.**
 
-Link Loom SDK is not just a framework; it is a **foundational runtime** designed to standardize how applications initialize, manage dependencies, and interact with the world. It provides a deterministic lifecycle, an explicit dependency graph, and a modular adapter system, enabling teams to build systems that are **auditable, predictable, and evolvable**.
+Link Loom SDK is a **runtime foundation** designed to standardize application initialization, dependency resolution, and operational lifecycle. It provides a deterministic execution environment where modules, services, and adapters coexist under a strict architectural contract.
 
-Unlike generic web frameworks that focus on handling HTTP requests, Link Loom focuses on **operating the service itself**. It acts as the backbone for your architecture, allowing separate monoliths, microservices, and workers to share a single, governed runtime contract.
+This is not merely a web framework. Link Loom operates as the **Application Backbone**, enabling disjointed systems—monoliths, distributed microservices, and dedicated workers—to share a unified operational signature.
 
 ---
 
-## 📚 Documentation Index
+## Documentation Index
 
-### 🚀 Getting Started
+### Getting Started
 
 - [**Installation & Quick Start**](docs/getting-started.md)
 - [**CLI Reference**](docs/cli/reference.md)
 - [**Building Your First Service**](docs/guides/building-services.md)
 
-### 📘 Usage Guides
+### Usage Guides
 
-- [**Project Structure**](docs/guides/project-structure.md) — Understanding the `loom-svc-js` template.
-- [**Configuration Masterclass**](docs/guides/configuration.md) — Deep dive into `default.json`, modules, and providers.
-- [**Environment Management**](docs/guides/environment-management.md) — Managing secrets with Local Config vs **Link Loom Cloud Vault**.
-- [**Deployment Guide**](docs/guides/deployment.md) — Production setup, Docker, and optimization.
+- [**Project Structure**](docs/guides/project-structure.md) — Analysis of the `loom-svc-js` template.
+- [**Configuration Strategies**](docs/guides/configuration.md) — Module provisioning and `default.json` schema.
+- [**Environment Management**](docs/guides/environment-management.md) — Local Injection vs **Link Loom Cloud Vault** Runtime Fetch.
+- [**Deployment Standards**](docs/guides/deployment.md) — Production optimization, Containerization, and Process Management.
 
-### 🏗 Architecture & Concepts
+### Architecture & Concepts
 
-- [**Core Concepts**](docs/architecture/core-concepts.md) — The Runtime, Lifecycle State Machine, and DI.
-- [**The Adapter Pattern**](docs/adapters/README.md) — How Loom communicates (HTTP, Events, Workers).
-- [**LLM Context / AI Agents**](docs/llm-context.md) — Technical summary for AI coding assistants.
+- [**Core Concepts**](docs/architecture/core-concepts.md) — The Runtime Engine, Lifecycle State Machine, and Dependency Graph.
+- [**Architectural Adapters**](docs/adapters/README.md) — Enabling Event-Driven, Isolated, and Modular architectures.
+- [**LLM Context / AI Agents**](docs/llm-context.md) — Technical definitions for AI coding assistants.
 
-### 🧩 Core Modules
+### Core Modules
 
-The kernel of the SDK.
+The Runtime Kernel.
 
 - [**Dependencies (DI)**](docs/core/dependencies.module.md)
 - [**Settings & Config**](docs/core/settings.module.md)
@@ -42,20 +42,42 @@ The kernel of the SDK.
 - [**Data Types**](docs/core/data-types.module.md)
 - [**Utilities**](docs/core/utilities.module.md)
 
-### 🔌 Adapters
+### Adapter Architectures
 
-- [**HTTP / API**](docs/adapters/http.md)
-- [**Events / Bus**](docs/adapters/events.md)
-- [**Functions**](docs/adapters/functions.md)
-- [**Apps (Threaded)**](docs/adapters/apps.md)
+- [**HTTP / REST Architecture**](docs/adapters/http.md)
+- [**Event-Driven Architecture / Bus**](docs/adapters/events.md)
+- [**Modular Serverless Functions**](docs/adapters/functions.md)
+- [**Isolated Long-Run Apps**](docs/adapters/apps.md)
 
-### 🛠 Infrastructure
+### Infrastructure Abstractions
 
 - [**Database**](docs/infrastructure/database.md)
 - [**Observability**](docs/infrastructure/observability.md)
 - [**Storage**](docs/infrastructure/storage.md)
 - [**Email**](docs/infrastructure/email.md)
 - [**Push Notifications**](docs/infrastructure/push.md)
+
+---
+
+## Technical Overview
+
+Link Loom fundamentally shifts the focus from **Request Handling** to **System Handling**.
+
+### 1. The Runtime Engine
+
+Loom instantiates a **Finite State Machine** that governs the application life from `BOOT` to `SHUTDOWN`. This ensures that database connections, message brokers, and background threads are initialized in a guaranteed order before any traffic is accepted.
+
+### 2. The Dependency Graph
+
+Unlike frameworks relying on decorators or implicit module imports, Loom constructs an **Explicit Dependency Graph**. All system capabilities (Logger, Config, DB Driver, Event Bus) are injected into a unified Context Object (`dependencies`), which is passed downstream to every service and route.
+
+### 3. Architectural Enablers (Adapters)
+
+Adapters in Loom are not simple wrappers; they are architectural primitives.
+
+- **Apps Adapter**: Provides **Thread-based Isolation** for CPU-intensive tasks, decoupling them from the main event loop.
+- **Events Adapter**: Establishes a **Pub/Sub Fabric** across the system, enabling decoupled, reactive architectures.
+- **Functions Adapter**: Implements a **Serverless-like Runtime** within the application for scheduled (Cron) or on-demand modular logic.
 
 ---
 
@@ -68,55 +90,18 @@ npm install --save @link-loom/sdk
 ## Basic Usage
 
 ```javascript
-/* constant { Loom } = require('@link-loom/sdk'); */
+/* const { Loom } = require('@link-loom/sdk'); */
 const loom = new Loom({ root: __dirname });
 
 const main = async () => {
-  const namespace = '[Service]';
+  /* The ignite() method triggers the bootstrap sequence */
   const dependencies = await loom.ignite();
+
+  dependencies.console.info('Runtime Active');
 };
 
 main();
 ```
-
-Visit:
-
-- OpenAPI Playground: `http://localhost:3601/open-api.playground`
-- API Specification: `http://localhost:3601/open-api.json`
-
----
-
-## Architecture Overview
-
-```
-+---------------------------------------------------+
-|                  Loom Runtime                     |
-|---------------------------------------------------|
-| Core Modules: Dependencies · Utilities · Settings |
-| Adapters: HTTP · Events · Database · Functions    |
-| Infrastructure: Logging · Observability · CLI     |
-| Runtime: Lifecycle · Registry · Context           |
-+---------------------------------------------------+
-```
-
-**Design Principles:**
-
-1.  **Strict Lifecycle**: Deterministic startup sequence.
-2.  **Explicit Dependencies**: No hidden globals; everything is injected.
-3.  **Convention over Config**: Standardized structure for scaling.
-4.  **Production Ready**: Built-in observability and governance hooks.
-
----
-
-## Comparison
-
-| Feature      | **Link Loom SDK**       | **Express/Fastify** | **NestJS**            |
-| :----------- | :---------------------- | :------------------ | :-------------------- |
-| **Role**     | Runtime Orchestrator    | Web Framework       | Application Framework |
-| **Focus**    | Lifecycle & Governance  | HTTP Routing        | Structural Patterns   |
-| **State**    | Managed (State Machine) | Stateless           | Stateless             |
-| **Config**   | JSON + Cloud Vault      | Manual / Env        | Modules / Decorators  |
-| **Use Case** | Enterprise Systems      | Microservices       | Complex APIs          |
 
 ---
 
@@ -124,10 +109,10 @@ Visit:
 
 1.  Use ESLint + Prettier.
 2.  Follow Conventional Commits.
-3.  Include tests and documentation.
+3.  Include unit tests and architectural documentation.
 
 ## License
 
 Licensed under the **Apache License 2.0**.
 
-Link Loom SDK — _Build once, govern everywhere._
+**Link Loom SDK** — _Deterministic Runtime Orchestration._

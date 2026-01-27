@@ -49,6 +49,14 @@ module.exports = {
       executionType: 'onServerLoaded',
     },
   ],
+
+  // TYPE C: Cache (In-Memory State)
+  cache: [
+    {
+      name: 'ConfigCache',
+      route: '/functions/cache/config.cache.js',
+    },
+  ],
 };
 ```
 
@@ -69,10 +77,50 @@ The adapter does not rely on `cron` syntax. It uses a **Drift-Corrected Calculat
 - **`onServerLoaded`**: The function subscribes to the `server::loaded` event. This ensures that DB connections and HTTP routes are fully active before the script runs (e.g., for self-health checks).
 - **`atTime`**: Runs synchronously during the module load phase. Used for blocking requirements (e.g., verifying Environment Variables).
 
-## 4. Use Cases
+## 4. Cache Functions (Type C)
 
-| Function Type | Best For...                                   | Architecture Analog           |
-| :------------ | :-------------------------------------------- | :---------------------------- |
-| **Timed**     | Report generation, DB cleanup, Email batches. | AWS Lambda (Scheduled) / Cron |
-| **Startup**   | Seeding, Migration checks, Cache warming.     | K8s InitContainers            |
-| **Cache**     | Fetching static config, loading ML models.    | Singleton Services            |
+Cache Functions (`src/functions/cache/`) act as **In-Memory Singletons** that persist data throughout the application lifecycle. They are a lightweight implementation of the Repository Pattern for volatile data.
+
+### Architecture
+
+Unlike Timed or Startup functions which execute and exit, Cache Functions are **stateful objects** maintained by the runtime.
+
+```javascript
+/* src/functions/cache/config.cache.js */
+class ConfigCache {
+  constructor(deps) {
+    this._data = {}; // Volatile Memory Store
+    this._console = deps.console;
+  }
+
+  get data() {
+    return this._data;
+  }
+
+  set data(val) {
+    this._data = val;
+    this._console.info('Cache updated');
+  }
+}
+```
+
+### Usage Pattern
+
+The `FunctionsModule` instantiates them once at boot. You can then inject them into other services to share state without polluting the global namespace.
+
+```javascript
+// Accessing the Cache from a Service
+// It is available via dependencies.functions.cache.[FunctionName]
+const cache = dependencies.functions.cache.ConfigCache;
+const settings = cache.data;
+```
+
+> **Warning**: This memory is process-local. In a clustered environment (multiple instances), cache functions are **not synchronized** between nodes. For distributed state, use the Redis Adapter.
+
+## 5. Use Cases
+
+| Function Type | Best For...                                      | Architecture Analog            |
+| :------------ | :----------------------------------------------- | :----------------------------- |
+| **Timed**     | Report generation, DB cleanup, Email batches.    | AWS Lambda (Scheduled) / Cron  |
+| **Startup**   | Seeding, Migration checks, Cache warming.        | K8s InitContainers             |
+| **Cache**     | Global configuration, ML Models, Reference Data. | Redis / Memcached (Local Only) |

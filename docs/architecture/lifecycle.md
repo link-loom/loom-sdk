@@ -15,7 +15,7 @@ _These modules are required for the "Brain" of the application to exist._
 
 1.  **DependenciesModule**: Creates the DI container.
 2.  **ConsoleModule**: Initializes the unified logger.
-3.  **UtilitiesModule**: Loads helper libraries (`lodash`, `moment`, etc).
+3.  **UtilitiesModule**: Loads internal toolkits (`Validator`, `Crypto`, `Generator`, `IO`). **Does not load generic libs like lodash.**
 4.  **SettingsModule**: Loads `config/default.json` and Envars.
 5.  **DataTypesModule**: Loads system constants.
 
@@ -26,7 +26,7 @@ _These modules connect to the outside world._
 6.  **DatabaseModule**: Connects to Mongo/SQL. **Blocks if connection fails.**
 7.  **StorageModule**: Connects to S3/GCS.
 8.  **PushModule**: Connects to FCM/APNS.
-9.  **ObservabilityModule**: Connects to NewRelic/Datadog.
+9.  **ObservabilityModule**: Connects to **Vectry** (Tracing) and **Sentry** (Error Tracking).
 
 ### Phase C: Adapters (The "Limbs")
 
@@ -34,20 +34,20 @@ _These modules enable business logic._
 
 10. **BusModule**: Creates the `EventEmitter` (Internal Layer 1).
     - _Event_: `server::event-bus::loaded`
-11. **ModelsModule**: Compiles Mongoose/ORM models.
+11. **ModelsModule**: Loads **Data Models** (`src/models/`). These are Domain Classes that wrap schemas, ensuring business logic stays close to data.
 12. **ServicesModule**: Instantiates Business Services.
 13. **FunctionsModule**:
     - Runs `startup` functions (Type: `atTime`).
     - Schedules `timed` functions (Cron).
     - Hydrates `cache` functions.
-14. **AppsModule**: Spawns isolated Worker Threads.
+14. **AppsModule**: Spawns **Long-Run Processes**. These are persistent execution units (in-thread or isolated) for heavy workloads.
 15. **ApiModule**: Builds the HTTP Router and Middleware pipeline.
 
 ### Phase D: The Event Mesh (Layer 2)
 
 _These modules enable distributed communication._
 
-16. **BrokerModule**: Connects to RabbitMQ/Redis.
+16. **BrokerModule**: Connects to the Real-Time Mesh via **WebSockets (Socket.io)**.
 17. **ProducerModule**: Registers output topics.
 18. **ConsumerModule**: Subscribes to input queues.
 

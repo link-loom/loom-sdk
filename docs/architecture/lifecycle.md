@@ -13,7 +13,7 @@ When you call `loom.ignite()`, the engine follows a strict, deterministic initia
 
 _These modules are required for the "Brain" of the application to exist._
 
-1.  **DependenciesModule**: Creates the DI container.
+1.  **DependenciesModule**: Creates the DI container and loads system dependencies and custom dependencies.
 2.  **ConsoleModule**: Initializes the unified logger.
 3.  **UtilitiesModule**: Loads internal toolkits (`Validator`, `Crypto`, `Generator`, `IO`). **Does not load generic libs like lodash.**
 4.  **SettingsModule**: Loads `config/default.json` and Envars.
@@ -24,9 +24,9 @@ _These modules are required for the "Brain" of the application to exist._
 _These modules connect to the outside world._
 
 6.  **DatabaseModule**: Connects to Mongo/SQL. **Blocks if connection fails.**
-7.  **StorageModule**: Connects to S3/GCS.
+7.  **StorageModule**: Connects to Azure Storage Account/S3.
 8.  **PushModule**: Connects to FCM/APNS.
-9.  **ObservabilityModule**: Connects to **Vectry** (Tracing) and **Sentry** (Error Tracking).
+9.  **ObservabilityModule**: Connects to **Vectry Analytics** (Tracing) or **Sentry** (Error Tracking).
 
 ### Phase C: Adapters (The "Limbs")
 

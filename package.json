@@ -1,7 +1,7 @@
 {
   "name": "@link-loom/sdk",
   "version": "7.3.39",
-  "description": "Core functionality for Loom projects to ensure quick setup and easy updates across multiple projects.",
+  "description": "The Enterprise Runtime Orchestrator for Node.js. A deterministic runtime foundation for building scalable, event-driven microservices. Enforces explicit dependency injection, managed lifecycles, and architectural primitives (Event-driven Architecture, Long-Run Apps, Serverless Functions, Api Rest Architecture) for professional Node.js ecosystems.",
   "main": "index.js",
   "publishConfig": {
     "access": "public"
@@ -59,7 +59,7 @@
   "scripts": {
     "lint": "eslint src/**/*.{js,jsx}",
     "format": "prettier --write **/*.{js,jsx}",
-    "version-patch": "npm version patch",
+    "version-patch": "npm version patch && git push && git push --tags",
     "publish": "npm publish"
   }
 }

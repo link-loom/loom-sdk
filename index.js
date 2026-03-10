@@ -10,7 +10,4 @@ module.exports = {
   Property,
   BaseWorker,
   WorkersModule,
-  // Backward compatibility aliases
-  BaseApp: BaseWorker,
-  AppsModule: WorkersModule,
 };

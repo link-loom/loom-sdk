@@ -1,7 +1,7 @@
 /**
- * BaseApp
- * =======
- * Lightweight base class for Link Loom Apps.
+ * BaseWorker
+ * ==========
+ * Lightweight base class for Link Loom Workers.
  *
  * Design
  * ------
@@ -14,7 +14,7 @@
  *
  * FSM Integration
  * ---------------
- * ApplicationStateMachine will call:
+ * WorkerStateMachine will call:
  *   - onCreate(ctx)      -> logs + setup(ctx)
  *   - onActivate(mode)   -> logs + (foreground/background)
  *   - onDeactivate(ctx)  -> logs + deactivate(ctx)
@@ -27,10 +27,10 @@
  * ------------
  * - Input: `ctx.options` contains the payload.
  * - Output: `activateBackground` should return a DTO `{ ok: boolean, data: any, errors?: any[] }`.
- *           Threaded Apps will automatically append `performance` metrics to this DTO.
+ *           Threaded Workers will automatically append `performance` metrics to this DTO.
  */
 
-class BaseApp {
+class BaseWorker {
   constructor(dependencies) {
     // Base Properties (Loom convention)
     this._dependencies = dependencies;
@@ -40,7 +40,7 @@ class BaseApp {
 
     // Namespace (default to class name if not provided)
     this._namespace =
-      this.constructor.namespace || `[App]::[${this.constructor.name}]`;
+      this.constructor.namespace || `[Worker]::[${this.constructor.name}]`;
 
     // Public API holder
     this._api = null;
@@ -139,4 +139,4 @@ class BaseApp {
   }
 }
 
-module.exports = { BaseApp };
+module.exports = { BaseWorker };

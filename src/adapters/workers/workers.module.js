@@ -1,36 +1,36 @@
-// src/adapters/apps/apps.module.js
+// src/adapters/workers/workers.module.js
 /**
- * AppsModule
- * ==========
- * OS-oriented in-process App runtime for Link Loom.
+ * WorkersModule
+ * =============
+ * OS-oriented in-process Worker runtime for Link Loom.
  *
  * What this is
  * ------------
- * A central orchestrator that manages the lifecycle of long-lived, in-process "Apps".
- * It exposes explicit commands (spawn/activate/deactivate/…/stop), hands a minimal OS-like
- * context to App hooks, and returns per-instance public APIs so that higher layers can
+ * A central orchestrator that manages the lifecycle of long-lived, in-process "Workers".
+ * It exposes explicit commands (spawn/activate/deactivate/.../stop), hands a minimal OS-like
+ * context to Worker hooks, and returns per-instance public APIs so that higher layers can
  * call business functions without touching lifecycle internals.
  *
  * Identity Model
  * --------------
- * - App (Class):    Business implementation (e.g., QrReaderApp).
- * - Instance:       A concrete execution of an App identified by an **alias** (string)
- *                   and a system-assigned **pid** (number). The pair (name, alias)
- *                   is unique within the process.
- * - Registry:       In-memory structure: Map<name, { AppClass, route?, autostart?, autostartMode?,
- *                   instances: Map<alias, AppInstance> }>.
+ * - Worker (Class):  Business implementation (e.g., QrReaderWorker).
+ * - Instance:        A concrete execution of a Worker identified by an **alias** (string)
+ *                    and a system-assigned **pid** (number). The pair (name, alias)
+ *                    is unique within the process.
+ * - Registry:        In-memory structure: Map<name, { WorkerClass, route?, autostart?, autostartMode?,
+ *                    instances: Map<alias, WorkerInstance> }>.
  *
  * Instance Addressing & Indices
  * -----------------------------
  * This module maintains three O(1) indices to resolve instances quickly:
  * - _processIndex:       pid -> { name, alias }
  * - _instanceIndex:      `${name}:${alias}` -> pid
- * - _globalAliasIndex:   alias -> { name, alias }     // global convenience (may match multiple apps across time)
+ * - _globalAliasIndex:   alias -> { name, alias }     // global convenience (may match multiple workers across time)
  *
  * Why three indices?
  * - By pid (process-like lookups): quick reverse resolution for ops triggered by numeric handles.
- * - By (name, alias): canonical identity inside AppsModule; used to disambiguate when
- *   several apps may reuse similar alias patterns.
+ * - By (name, alias): canonical identity inside WorkersModule; used to disambiguate when
+ *   several workers may reuse similar alias patterns.
  * - By alias (global): developer convenience for "just give me the alias". This allows
  *   terse calls like `getByAlias('worker-001')`, while still providing a stricter
  *   `getByNameAndAlias(name, alias)` when ambiguity is possible.
@@ -39,9 +39,9 @@
  * ------------
  * - If an alias is not provided on spawn, **the default alias equals the PID string**.
  *   This guarantees a globally unique, human-readable identifier without extra coordination.
- * - Apps can **rename** aliases at runtime via `getByAlias(...).setAlias(newAlias)` (or any
+ * - Workers can **rename** aliases at runtime via `getByAlias(...).setAlias(newAlias)` (or any
  *   equivalent handle). Renaming is atomic across all indices and validated for collisions:
- *     * unique per app (no duplicate alias for the same `name`)
+ *     * unique per worker (no duplicate alias for the same `name`)
  *     * unique globally (no duplicate in `_globalAliasIndex`)
  * - Auto-increment naming helpers (e.g., `autoAlias(name) -> name-001`) are still available
  *   if you prefer semantic aliases from the start.
@@ -49,19 +49,19 @@
  * Lifecycle (per Instance)
  * ------------------------
  * States:
- *   - INACTIVE           → Created, prepared, no active IO; entry state after spawn().
- *   - ACTIVE_FOREGROUND  → Fully active; may hold listeners/servers, full priority (throttling is host concern).
- *   - ACTIVE_BACKGROUND  → Active but background semantics; lower priority (purely declarative here).
- *   - SUSPENDED          → IO released; rehydratable footprint.
- *   - TERMINATING        → Graceful teardown in progress.
- *   - TERMINATED         → Instance removed from registry; indices updated.
- *   - CRASHED            → Terminal fault during a hook/transition (no auto-restart here).
+ *   - INACTIVE           -> Created, prepared, no active IO; entry state after spawn().
+ *   - ACTIVE_FOREGROUND  -> Fully active; may hold listeners/servers, full priority (throttling is host concern).
+ *   - ACTIVE_BACKGROUND  -> Active but background semantics; lower priority (purely declarative here).
+ *   - SUSPENDED          -> IO released; rehydratable footprint.
+ *   - TERMINATING        -> Graceful teardown in progress.
+ *   - TERMINATED         -> Instance removed from registry; indices updated.
+ *   - CRASHED            -> Terminal fault during a hook/transition (no auto-restart here).
  *
  * Transitions (Command-Driven)
  * ----------------------------
  * Command                                 Precondition                        Postcondition / Hook
  * ---------------------------------------------------------------------------------------------------------------
- * spawn(name, alias?, opts?)              App registered                      INACTIVE            + onCreate(ctx)?
+ * spawn(name, alias?, opts?)              Worker registered                   INACTIVE            + onCreate(ctx)?
  * activate(name, alias?, {mode})          INACTIVE | ACTIVE_*                 ACTIVE_*            + onActivate(mode, ctx)?
  * background(name, alias?)                INACTIVE | ACTIVE_*                 ACTIVE_BACKGROUND   + onActivate('background', ctx)?
  * foreground(name, alias?)                INACTIVE | ACTIVE_*                 ACTIVE_FOREGROUND   + onActivate('foreground', ctx)?
@@ -69,32 +69,32 @@
  * suspend(name, alias?)                   Any (except TERMINATED)             SUSPENDED           + onSuspend(ctx)?
  * resume(name, alias?)                    SUSPENDED                           INACTIVE            + onResume(ctx)?
  * stop(name, alias?, {force?})            Any (if exists)                     TERMINATED          + onTerminate(ctx)? (skipped if force)
- * signal(name, alias?, sig, opts?)        Instance exists                     (no state change)  → onSignal(sig, ctx)?
+ * signal(name, alias?, sig, opts?)        Instance exists                     (no state change)  -> onSignal(sig, ctx)?
  *
- * App Contract (Hooks & Public API)
- * ---------------------------------
- * Optional async hooks an App may implement:
- *   onCreate(ctx)                         → prepare lightweight state.
- *   onActivate(mode, ctx)                 → elevate to ACTIVE_*; open listeners/servers if required.
- *   onDeactivate(ctx)                     → reduce to INACTIVE; close activity while keeping prepared state.
- *   onSuspend(ctx)                        → release IO/resources; persist volatile state if needed.
- *   onResume(ctx)                         → rehydrate state; remains INACTIVE until explicitly activated.
- *   onTerminate(ctx)                      → final cleanup before removal.
- *   onSignal(sig, ctx)                    → handle out-of-band signals (e.g., SIGHUP).
+ * Worker Contract (Hooks & Public API)
+ * ------------------------------------
+ * Optional async hooks a Worker may implement:
+ *   onCreate(ctx)                         -> prepare lightweight state.
+ *   onActivate(mode, ctx)                 -> elevate to ACTIVE_*; open listeners/servers if required.
+ *   onDeactivate(ctx)                     -> reduce to INACTIVE; close activity while keeping prepared state.
+ *   onSuspend(ctx)                        -> release IO/resources; persist volatile state if needed.
+ *   onResume(ctx)                         -> rehydrate state; remains INACTIVE until explicitly activated.
+ *   onTerminate(ctx)                      -> final cleanup before removal.
+ *   onSignal(sig, ctx)                    -> handle out-of-band signals (e.g., SIGHUP).
  *
  * Public API (per Instance)
  * -------------------------
  *   get api(): object | () => object
  *     - Exposed to callers through `api(name, alias)` or convenience handles
  *       like `getByAlias(alias)` / `getByPid(pid)`.
- *     - MUST NOT mutate lifecycle directly—use AppsModule commands for that.
- *     - AppsModule returns the object as is (if function, it is invoked to obtain the object).
+ *     - MUST NOT mutate lifecycle directly--use WorkersModule commands for that.
+ *     - WorkersModule returns the object as is (if function, it is invoked to obtain the object).
  *
  * Context (ctx) Provided to Hooks
  * -------------------------------
  *   {
  *     phase: 'create'|'activate'|'deactivate'|'suspend'|'resume'|'terminate'|'signal',
- *     name: string,           // app name
+ *     name: string,           // worker name
  *     alias: string,          // instance alias (default: String(pid))
  *     pid: number,            // stable numeric identifier for this instance
  *     options: object,        // command payload
@@ -102,30 +102,30 @@
  *     logger: ConsoleLike     // unified logging interface from Loom
  *   }
  *
- * Public API of AppsModule
- * ------------------------
- *   register(name, AppClass, meta?)       → register the AppClass (meta: { autostart?, autostartMode? })
- *   spawn(name, alias?, opts?)            → create INACTIVE instance (+ onCreate)
- *   activate/background/foreground(...)   → move to ACTIVE_* (+ onActivate)
- *   deactivate(...)                       → ACTIVE_* → INACTIVE (+ onDeactivate)
- *   suspend/resume(...)                   → SUSPENDED <-> INACTIVE (+ onSuspend/onResume)
- *   stop(name, alias?, {force?})          → remove instance; cleanup indices; (+ onTerminate if not forced)
- *   signal(name, alias?, sig, opts?)      → dispatch system signal to App (no state change)
- *   status(name, alias?)                  → { name, alias, pid, state, createdAt, lastTransitionAt }
- *   list()                                → [{ name, instances: [{ alias, pid, state, ... }] }]
- *   api(name, alias?)                     → return instance public API (disambiguates when multiple aliases)
- *   call(name, alias, method, ...args)    → invoke a public API method by (name, alias)
- *   broadcast(name, method, ...args)      → invoke the API method across all instances of `name`
+ * Public API of WorkersModule
+ * ---------------------------
+ *   register(name, WorkerClass, meta?)    -> register the WorkerClass (meta: { autostart?, autostartMode? })
+ *   spawn(name, alias?, opts?)            -> create INACTIVE instance (+ onCreate)
+ *   activate/background/foreground(...)   -> move to ACTIVE_* (+ onActivate)
+ *   deactivate(...)                       -> ACTIVE_* -> INACTIVE (+ onDeactivate)
+ *   suspend/resume(...)                   -> SUSPENDED <-> INACTIVE (+ onSuspend/onResume)
+ *   stop(name, alias?, {force?})          -> remove instance; cleanup indices; (+ onTerminate if not forced)
+ *   signal(name, alias?, sig, opts?)      -> dispatch system signal to Worker (no state change)
+ *   status(name, alias?)                  -> { name, alias, pid, state, createdAt, lastTransitionAt }
+ *   list()                                -> [{ name, instances: [{ alias, pid, state, ... }] }]
+ *   api(name, alias?)                     -> return instance public API (disambiguates when multiple aliases)
+ *   call(name, alias, method, ...args)    -> invoke a public API method by (name, alias)
+ *   broadcast(name, method, ...args)      -> invoke the API method across all instances of `name`
  *
  * Convenience Handles & PID Access
  * --------------------------------
- *   getByAlias(alias)                     → returns a Proxy of the public API (single match required)
- *   getByNameAndAlias(name, alias)        → returns a Proxy of the public API (explicit identity)
- *   getByPid(pid)                         → returns a Proxy of the public API (pid-based)
- *   getPid(name, alias)                   → returns the pid for (name, alias)
- *   statusByPid(pid)                      → status snapshot for pid
- *   callByPid(pid, method, ...args)       → invoke API method by pid
- *   stopByPid(pid, opts?)                 → stop instance by pid
+ *   getByAlias(alias)                     -> returns a Proxy of the public API (single match required)
+ *   getByNameAndAlias(name, alias)        -> returns a Proxy of the public API (explicit identity)
+ *   getByPid(pid)                         -> returns a Proxy of the public API (pid-based)
+ *   getPid(name, alias)                   -> returns the pid for (name, alias)
+ *   statusByPid(pid)                      -> status snapshot for pid
+ *   callByPid(pid, method, ...args)       -> invoke API method by pid
+ *   stopByPid(pid, opts?)                 -> stop instance by pid
  *
  * Chaining Alias Rename
  * ---------------------
@@ -136,25 +136,25 @@
  *
  * Boot & Autostart
  * ----------------
- * 1) Load manifest (if present) and register apps (route → require(AppClass)).
+ * 1) Load manifest (if present) and register workers (route -> require(WorkerClass)).
  * 2) For entries with autostart=true: spawn(name), then activate(name, <alias>, { mode: autostartMode || 'background' }).
  *    If no alias was passed to spawn, <alias> defaults to the pid string produced at creation time.
  *
  * Concurrency & Scaling
  * ---------------------
- * - Multiple instances per App are supported via aliases.
+ * - Multiple instances per Worker are supported via aliases.
  * - Cross-process/node scaling is a deployment concern (PM2/containers/your orchestrator).
- * - Apps should avoid global mutable state if they plan to run multiple instances.
+ * - Workers should avoid global mutable state if they plan to run multiple instances.
  *
  * Error & Crash Semantics
  * -----------------------
  * - If a hook throws, the instance may transition to CRASHED. This module does not auto-restart.
  * - Retry/backoff or resurrection policies should be enforced by the host/orchestrator layer.
  */
-const { ApplicationStateMachine } = require('./app.state-machine');
-const ThreadedAppProxy = require('./worker/threaded-app.proxy');
+const { WorkerStateMachine } = require('./worker.state-machine');
+const ThreadedWorkerProxy = require('./worker-thread/threaded-worker.proxy');
 
-class AppsModule {
+class WorkersModule {
   /**
    * @param {object} dependencies - Loom dependencies (console, path, config, adapters, etc.)
    *                                Must include { console, path, root } at minimum.
@@ -169,11 +169,11 @@ class AppsModule {
     this._root = dependencies.root;
 
     /* Assigments */
-    this._namespace = '[Loom]::[Apps]';
+    this._namespace = '[Loom]::[Workers]';
 
     /**
-     * Registry: name -> { AppClass?, route?, autostart?, autostartMode?, instances: Map<alias, Instance> }
-     * Instance: { app, pid, stateMachine, getters }
+     * Registry: name -> { WorkerClass?, route?, autostart?, autostartMode?, instances: Map<alias, Instance> }
+     * Instance: { worker, pid, stateMachine, getters }
      */
     this._registry = new Map();
 
@@ -181,7 +181,7 @@ class AppsModule {
      * PID indexes
      * -----------
      * - _processIndex: incremental counter: Unix-like (unique process)
-     * - _instanceIndex: pid -> { name, alias }: app-level mapping
+     * - _instanceIndex: pid -> { name, alias }: worker-level mapping
      * - _globalAliasIndex: `${name}:${alias}` -> pid: developer convenience
      */
     this._pidSeq = 1000;
@@ -190,7 +190,7 @@ class AppsModule {
     this._globalAliasIndex = new Map();
 
     /**
-     * Auto-incremental alias per app
+     * Auto-incremental alias per worker
      * name -> counter (generate worker-001, worker-002, ...)
      */
     this._aliasSeq = new Map();
@@ -217,15 +217,15 @@ class AppsModule {
   get registry() {
     const output = [];
 
-    for (const [name, appRegistryEntry] of this._registry.entries()) {
+    for (const [name, workerRegistryEntry] of this._registry.entries()) {
       output.push({
         name,
-        route: appRegistryEntry.route || null,
-        hasClass: !!appRegistryEntry.AppClass,
-        autostart: !!appRegistryEntry.autostart,
-        autostartMode: appRegistryEntry.autostartMode || null,
+        route: workerRegistryEntry.route || null,
+        hasClass: !!workerRegistryEntry.WorkerClass,
+        autostart: !!workerRegistryEntry.autostart,
+        autostartMode: workerRegistryEntry.autostartMode || null,
         instances: Array.from(
-          (appRegistryEntry.instances || new Map()).entries(),
+          (workerRegistryEntry.instances || new Map()).entries(),
         ).map(([alias, inst]) => ({ alias, pid: inst?.pid || null })),
       });
     }
@@ -237,18 +237,18 @@ class AppsModule {
   // ---------------------------
 
   /**
-   * Registers an App class programmatically.
+   * Registers a Worker class programmatically.
    * @param {string} name
-   * @param {Function} AppClass
+   * @param {Function} WorkerClass
    * @param {{autostart?:boolean, autostartMode?:'foreground'|'background'}} [meta]
    */
-  register(name, AppClass, meta = {}, path = null) {
-    if (!name || !AppClass) {
-      throw new Error('register(name, AppClass) requires valid arguments');
+  register(name, WorkerClass, meta = {}, path = null) {
+    if (!name || !WorkerClass) {
+      throw new Error('register(name, WorkerClass) requires valid arguments');
     }
 
     const entry = this._registry.get(name) || { name, instances: new Map() };
-    entry.AppClass = AppClass;
+    entry.WorkerClass = WorkerClass;
     if (path) entry.path = path;
 
     if (typeof meta.autostart === 'boolean') {
@@ -267,7 +267,7 @@ class AppsModule {
     }
 
     this._registry.set(name, entry);
-    this._console.info(`Registered app: ${name}`, {
+    this._console.info(`Registered worker: ${name}`, {
       namespace: this._namespace,
     });
   }
@@ -277,7 +277,7 @@ class AppsModule {
   // ---------------------------
 
   /**
-   * Automatically generates an alias if one is not provided. One counter per app.
+   * Automatically generates an alias if one is not provided. One counter per worker.
    */
   autoAlias(name) {
     const n = (this._aliasSeq.get(name) || 0) + 1;
@@ -296,50 +296,50 @@ class AppsModule {
   }
 
   /**
-   * Create an INACTIVE instance per App.
+   * Create an INACTIVE instance per Worker.
    * Returns { alias, pid }.
    * @param {string} name
    * @param {string|null} [alias=null]  // if null -> autogenerated
    * @param {object} [opts]
    */
   async spawn(name, alias = null, opts = {}) {
-    const registryApp = this._registry.get(name);
-    if (!registryApp?.AppClass) {
-      throw new Error(`App not found: ${name}`);
+    const registryWorker = this._registry.get(name);
+    if (!registryWorker?.WorkerClass) {
+      throw new Error(`Worker not found: ${name}`);
     }
 
     const pid = this.#nextPid();
 
     alias = alias == null || alias === undefined ? String(pid) : alias;
 
-    if (registryApp.instances.has(alias)) {
+    if (registryWorker.instances.has(alias)) {
       const pidExisting = this._instanceIndex.get(`${name}:${alias}`);
       return { alias, pid: pidExisting || null };
     }
 
-    const app = new registryApp.AppClass(this._dependencies);
-    let executionInstance = app;
+    const worker = new registryWorker.WorkerClass(this._dependencies);
+    let executionInstance = worker;
 
     // Check Global Isolation Config
     const isolation =
       this._dependencies.config &&
-      this._dependencies.config.has('APPS_ISOLATION')
-        ? this._dependencies.config.get('APPS_ISOLATION')
+      this._dependencies.config.has('WORKERS_ISOLATION')
+        ? this._dependencies.config.get('WORKERS_ISOLATION')
         : 'process';
 
-    if (isolation === 'threaded' && registryApp.path) {
+    if (isolation === 'threaded' && registryWorker.path) {
       this._console.info(`Spawning ${name} in Worker Thread`, {
         namespace: this._namespace,
       });
-      executionInstance = new ThreadedAppProxy({
+      executionInstance = new ThreadedWorkerProxy({
         name,
-        appPath: registryApp.path,
+        appPath: registryWorker.path,
         config: this._dependencies.config,
         logger: this._console,
       });
     }
 
-    const stateMachine = new ApplicationStateMachine({
+    const stateMachine = new WorkerStateMachine({
       ...this._dependencies,
       app: executionInstance,
       name,
@@ -349,11 +349,11 @@ class AppsModule {
         this.#context(phase, contextName, contextAlias, options, pid),
     });
 
-    // Boot → INACTIVE
+    // Boot -> INACTIVE
     await stateMachine.create(opts);
 
     const instance = {
-      app,
+      worker,
       pid,
       stateMachine,
       get state() {
@@ -367,8 +367,8 @@ class AppsModule {
       },
     };
 
-    registryApp.instances.set(alias, instance);
-    this._registry.set(name, registryApp);
+    registryWorker.instances.set(alias, instance);
+    this._registry.set(name, registryWorker);
     this._processIndex.set(pid, { name, alias });
     this._instanceIndex.set(`${name}:${alias}`, pid);
 
@@ -449,26 +449,26 @@ class AppsModule {
   }
 
   /**
-   * Terminates an instance. If `force:true`, drops the reference even if the App has no onTerminate().
-   * Otherwise, calls app.onTerminate(ctx) if provided.
+   * Terminates an instance. If `force:true`, drops the reference even if the Worker has no onTerminate().
+   * Otherwise, calls worker.onTerminate(ctx) if provided.
    */
   async stop(name, alias = 'default', opts = {}) {
     const { force = false } = opts;
-    const appRegistry = this._registry.get(name);
-    if (!appRegistry) return;
+    const workerRegistry = this._registry.get(name);
+    if (!workerRegistry) return;
 
-    const instance = appRegistry.instances.get(alias);
+    const instance = workerRegistry.instances.get(alias);
     if (!instance) return;
 
-    // → TERMINATING
+    // -> TERMINATING
     await instance.stateMachine.stop({ force });
 
-    // → TERMINATED
+    // -> TERMINATED
     await instance.stateMachine.stop();
 
     // drop reference after TERMINATED
-    appRegistry.instances.delete(alias);
-    this._registry.set(name, appRegistry);
+    workerRegistry.instances.delete(alias);
+    this._registry.set(name, workerRegistry);
 
     // Clean PID
     const pid = this._instanceIndex.get(`${name}:${alias}`);
@@ -486,7 +486,7 @@ class AppsModule {
   }
 
   /**
-   * Sends a signal to the App (if it implements onSignal()).
+   * Sends a signal to the Worker (if it implements onSignal()).
    * It does not change state.
    */
   async signal(name, alias = 'default', sig = 'SIGHUP', opts = {}) {
@@ -528,14 +528,14 @@ class AppsModule {
   }
 
   /**
-   * Lists running instances grouped by app (includes pid).
+   * Lists running instances grouped by worker (includes pid).
    */
   list() {
     const output = [];
 
-    for (const [name, appRegistryEntry] of this._registry.entries()) {
+    for (const [name, workerRegistryEntry] of this._registry.entries()) {
       const instances = [];
-      for (const [alias, inst] of appRegistryEntry.instances.entries()) {
+      for (const [alias, inst] of workerRegistryEntry.instances.entries()) {
         instances.push({
           alias,
           pid: inst.pid,
@@ -551,12 +551,12 @@ class AppsModule {
   }
 
   /**
-   * Returns the public API object defined by the App (by alias).
-   * If there are multiple instances and you don't pass aliases → throws an error (disambiguation).
+   * Returns the public API object defined by the Worker (by alias).
+   * If there are multiple instances and you don't pass aliases -> throws an error (disambiguation).
    */
   api(name, alias = undefined) {
     const entry = this._registry.get(name);
-    if (!entry) throw new Error(`App not registered: ${name}`);
+    if (!entry) throw new Error(`Worker not registered: ${name}`);
 
     const aliases = Array.from(entry.instances.keys());
     if (aliases.length === 0)
@@ -573,10 +573,10 @@ class AppsModule {
 
     const instance = entry.instances.get(targetAlias);
     if (!instance)
-      throw new Error(`App instance not running: ${name}:${targetAlias}`);
+      throw new Error(`Worker instance not running: ${name}:${targetAlias}`);
 
-    const raw = instance.app?.api;
-    return typeof raw === 'function' ? raw.call(instance.app) : raw || {};
+    const raw = instance.worker?.api;
+    return typeof raw === 'function' ? raw.call(instance.worker) : raw || {};
   }
 
   /**
@@ -592,12 +592,12 @@ class AppsModule {
   }
 
   /**
-   * Broadcast: invokes an API method on all instances of an App.
+   * Broadcast: invokes an API method on all instances of a Worker.
    * Returns [{ alias, pid, ok, value?, error? }]
    */
   broadcast(name, method, ...args) {
     const entry = this._registry.get(name);
-    if (!entry) throw new Error(`App not registered: ${name}`);
+    if (!entry) throw new Error(`Worker not registered: ${name}`);
 
     const results = [];
     for (const [alias, inst] of entry.instances.entries()) {
@@ -641,8 +641,8 @@ class AppsModule {
   #resolveByPid(pid) {
     const ref = this._processIndex.get(pid);
     if (!ref) throw new Error(`PID not found: ${pid}`);
-    const appRegistry = this._registry.get(ref.name);
-    const instance = appRegistry?.instances?.get(ref.alias);
+    const workerRegistry = this._registry.get(ref.name);
+    const instance = workerRegistry?.instances?.get(ref.alias);
     if (!instance)
       throw new Error(
         `Instance not found for PID ${pid} (${ref.name}:${ref.alias})`,
@@ -655,8 +655,8 @@ class AppsModule {
    */
   apiByPid(pid) {
     const { instance } = this.#resolveByPid(pid);
-    const raw = instance.app?.api;
-    return typeof raw === 'function' ? raw.call(instance.app) : raw || {};
+    const raw = instance.worker?.api;
+    return typeof raw === 'function' ? raw.call(instance.worker) : raw || {};
   }
 
   /**
@@ -699,11 +699,11 @@ class AppsModule {
   // ---------------------------
 
   #instance(name, alias = 'default') {
-    const appRegistry = this._registry.get(name);
-    const instance = appRegistry?.instances?.get(alias);
+    const workerRegistry = this._registry.get(name);
+    const instance = workerRegistry?.instances?.get(alias);
 
     if (!instance) {
-      throw new Error(`App instance not running: ${name}:${alias}`);
+      throw new Error(`Worker instance not running: ${name}:${alias}`);
     }
 
     return instance;
@@ -711,69 +711,74 @@ class AppsModule {
 
   #loadManifest() {
     try {
-      const manifestPath = this._path.join(this._root, 'src', 'apps', 'index');
-      const appDefinitions = require(manifestPath);
-      const appList = Array.isArray(appDefinitions)
-        ? appDefinitions
-        : appDefinitions?.cache || [];
+      const manifestPath = this._path.join(
+        this._root,
+        'src',
+        'workers',
+        'index',
+      );
+      const workerDefinitions = require(manifestPath);
+      const workerList = Array.isArray(workerDefinitions)
+        ? workerDefinitions
+        : workerDefinitions?.cache || [];
 
-      for (const appDefinition of appList) {
-        if (!appDefinition?.name) {
+      for (const workerDefinition of workerList) {
+        if (!workerDefinition?.name) {
           continue;
         }
-        const entry = this._registry.get(appDefinition.name) || {
-          name: appDefinition.name,
+        const entry = this._registry.get(workerDefinition.name) || {
+          name: workerDefinition.name,
           instances: new Map(),
         };
 
-        entry.route = appDefinition.route || entry.route;
-        entry.autostart = !!appDefinition.autostart;
+        entry.route = workerDefinition.route || entry.route;
+        entry.autostart = !!workerDefinition.autostart;
 
         if (
-          appDefinition.autostartMode === 'foreground' ||
-          appDefinition.autostartMode === 'background'
+          workerDefinition.autostartMode === 'foreground' ||
+          workerDefinition.autostartMode === 'background'
         ) {
-          entry.autostartMode = appDefinition.autostartMode;
+          entry.autostartMode = workerDefinition.autostartMode;
         }
 
-        this._registry.set(appDefinition.name, entry);
+        this._registry.set(workerDefinition.name, entry);
       }
 
-      this._console.info('Apps manifest loaded', {
+      this._console.info('Workers manifest loaded', {
         namespace: this._namespace,
       });
     } catch {
-      this._console.info('No Apps manifest found (optional)', {
+      this._console.info('No Workers manifest found (optional)', {
         namespace: this._namespace,
       });
     }
   }
 
   #loadClassesFromRoutes() {
-    for (const [name, appRegistryEntry] of this._registry.entries()) {
+    for (const [name, workerRegistryEntry] of this._registry.entries()) {
       try {
-        if (appRegistryEntry.AppClass || !appRegistryEntry.route) {
+        if (workerRegistryEntry.WorkerClass || !workerRegistryEntry.route) {
           continue;
         }
 
         const pathname = this._path.join(
           this._root,
           'src',
-          appRegistryEntry.route,
+          workerRegistryEntry.route,
         );
         // eslint-disable-next-line import/no-dynamic-require, global-require
-        const AppClass = require(pathname);
+        const WorkerClass = require(pathname);
 
-        appRegistryEntry.AppClass = AppClass;
-        appRegistryEntry.path = pathname; // Capture path for worker threads
-        this._registry.set(name, appRegistryEntry);
+        workerRegistryEntry.WorkerClass = WorkerClass;
+        workerRegistryEntry.path = pathname; // Capture path for worker threads
+        this._registry.set(name, workerRegistryEntry);
 
-        this._console.info(`Loaded AppClass for ${name}`, {
+        this._console.info(`Loaded WorkerClass for ${name}`, {
           namespace: this._namespace,
         });
       } catch (err) {
         this._console.error(
-          `Failed loading AppClass for ${name} from "${appRegistryEntry.route}"`,
+          `Failed loading WorkerClass for ${name} from "${workerRegistryEntry.route}"`,
           { namespace: this._namespace },
         );
         this._console.log(err);
@@ -782,20 +787,26 @@ class AppsModule {
   }
 
   async #autostartIfAny() {
-    for (const [name, appRegistryEntry] of this._registry.entries()) {
+    for (const [name, workerRegistryEntry] of this._registry.entries()) {
       try {
-        if (!appRegistryEntry.autostart || !appRegistryEntry.AppClass) {
+        if (
+          !workerRegistryEntry.autostart ||
+          !workerRegistryEntry.WorkerClass
+        ) {
           continue;
         }
 
-        const mode = appRegistryEntry.autostartMode || 'background';
+        const mode = workerRegistryEntry.autostartMode || 'background';
 
         const { alias } = await this.spawn(name); // autogenera alias
         await this.activate(name, alias, { mode, reason: 'autostart' });
       } catch (err) {
-        this._console.error(`Autostart failed for ${name} -> ${err?.message}`, {
-          namespace: this._namespace,
-        });
+        this._console.error(
+          `Autostart failed for ${name} -> ${err?.message}`,
+          {
+            namespace: this._namespace,
+          },
+        );
       }
     }
   }
@@ -806,7 +817,7 @@ class AppsModule {
       phase,
       name,
       alias,
-      pid, // ← PID available on all hooks
+      pid, // <- PID available on all hooks
       options: opts || {},
       adapters: this._dependencies, // access to IO providers, crypto, db, bus, http, etc.
       logger: this._dependencies.console, // consistent logging
@@ -853,14 +864,16 @@ class AppsModule {
     }
 
     const entry = this._registry.get(name);
-    if (!entry) throw new Error(`App not registered: ${name}`);
+    if (!entry) throw new Error(`Worker not registered: ${name}`);
 
     const instance = entry.instances.get(oldAlias);
     if (!instance)
-      throw new Error(`App instance not running: ${name}:${oldAlias}`);
+      throw new Error(`Worker instance not running: ${name}:${oldAlias}`);
 
     if (entry.instances.has(newAlias)) {
-      throw new Error(`Alias already exists for app "${name}": ${newAlias}`);
+      throw new Error(
+        `Alias already exists for worker "${name}": ${newAlias}`,
+      );
     }
     if (this._globalAliasIndex.has(newAlias)) {
       throw new Error(`Alias is globally in use: ${newAlias}`);
@@ -898,8 +911,9 @@ class AppsModule {
   }
 
   #makeApiHandle(name, alias, instance) {
-    const raw = instance.app?.api;
-    const api = typeof raw === 'function' ? raw.call(instance.app) : raw || {};
+    const raw = instance.worker?.api;
+    const api =
+      typeof raw === 'function' ? raw.call(instance.worker) : raw || {};
     const self = this;
 
     return new Proxy(api, {
@@ -919,7 +933,7 @@ class AppsModule {
     const matches = this.#resolveByAlias(alias);
     if (matches.length !== 1) {
       throw new Error(
-        `Alias "${alias}" is ambiguous across apps. Use getByNameAndAlias(name, alias).`,
+        `Alias "${alias}" is ambiguous across workers. Use getByNameAndAlias(name, alias).`,
       );
     }
     return matches[0]; // { name, alias, instance }
@@ -942,4 +956,4 @@ class AppsModule {
   }
 }
 
-module.exports = { AppsModule };
+module.exports = { WorkersModule };

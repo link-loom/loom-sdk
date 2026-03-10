@@ -30,20 +30,20 @@ const state = {
 };
 
 try {
-  // 3. Load App Class
+  // 3. Load Worker Class
   // eslint-disable-next-line import/no-dynamic-require, global-require
-  const AppClass = require(path);
+  const WorkerClass = require(path);
 
   // 4. Instantiate
-  const app = new AppClass(dependencies);
+  const worker = new WorkerClass(dependencies);
 
   // 5. Message Loop
   parentPort.on('message', async (message) => {
     try {
       if (message.cmd === 'activateBackground') {
         state.snapshot = PerformanceUtil.start();
-        if (app.activateBackground) {
-          await app.activateBackground(message.ctx);
+        if (worker.activateBackground) {
+          await worker.activateBackground(message.ctx);
         }
         parentPort.postMessage({
           type: 'result',
@@ -51,8 +51,8 @@ try {
           status: 'ok',
         });
       } else if (message.cmd === 'stop') {
-        if (app.onTerminate) {
-          await app.onTerminate(message.ctx);
+        if (worker.onTerminate) {
+          await worker.onTerminate(message.ctx);
         }
 
         let report = null;

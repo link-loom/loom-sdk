@@ -1,16 +1,16 @@
-# Apps Architecture
+# Workers Architecture
 
 > **Status**: Stable
 > **Isolation**: Threaded (Default) / Process (Opt-in)
-> **Module**: `[Loom]::[Apps]`
+> **Module**: `[Loom]::[Workers]`
 
 ## Overview
 
-The **Apps** system is a runtime within Link Loom designed to safely execute untrusted or resource-intensive business logic. It provides **"Bare-Metal" Isolation** by running each App instance in a dedicated Execution Unit (Worker Thread) separate from the Main Event Loop.
+The **Workers** system is a runtime within Link Loom designed to safely execute untrusted or resource-intensive business logic. It provides **"Bare-Metal" Isolation** by running each Worker instance in a dedicated Execution Unit (Worker Thread) separate from the Main Event Loop.
 
 This architecture ensures:
 
-1.  **Reliability**: A crash in an App does not crash the host.
+1.  **Reliability**: A crash in a Worker does not crash the host.
 2.  **Responsiveness**: CPU-bound tasks do not block the Orchestrator's I/O.
 3.  **Sanitation**: Memory is fully reclaimed after every execution ("The Guillotine").
 
@@ -23,28 +23,28 @@ The system follows a **Proxy-Worker** pattern.
 ```mermaid
 graph TD
     subgraph "Main Process (Orchestrator)"
-        AM[AppsModule]
-        PROXY[ThreadedAppProxy]
+        WM[WorkersModule]
+        PROXY[ThreadedWorkerProxy]
         SM[State Machine]
     end
 
     subgraph "Worker Thread (V8 Isolate)"
-        W_ENTRY[app.worker.js]
-        ACTUAL_APP[User App Instance]
+        W_ENTRY[worker.thread.js]
+        ACTUAL_WORKER[User Worker Instance]
     end
 
-    AM -->|Spawn| PROXY
+    WM -->|Spawn| PROXY
     PROXY --"postMessage(cmd)"--> W_ENTRY
-    W_ENTRY -->|Requires| ACTUAL_APP
+    W_ENTRY -->|Requires| ACTUAL_WORKER
     W_ENTRY --"postMessage(result)"--> PROXY
     SM --"Controls"--> PROXY
 ```
 
 ### Components
 
-- **AppsModule**: The kernel that manages the registry and lifecycle. It decides _how_ to spawn an app (Threaded vs In-Process) based on configuration.
-- **ThreadedAppProxy**: A "Twin" object living in the Main Thread. It creates the Worker and facilitates all communication. It looks and acts like a local App instance.
-- **app.worker.js**: The bootstrap script running inside the thread. It reconstructs a minimal environment (mocked Console, Config) and loads the actual App code.
+- **WorkersModule**: The kernel that manages the registry and lifecycle. It decides _how_ to spawn a worker (Threaded vs In-Process) based on configuration.
+- **ThreadedWorkerProxy**: A "Twin" object living in the Main Thread. It creates the Worker and facilitates all communication. It looks and acts like a local Worker instance.
+- **worker.thread.js**: The bootstrap script running inside the thread. It reconstructs a minimal environment (mocked Console, Config) and loads the actual Worker code.
 
 ---
 
@@ -64,9 +64,9 @@ We utilize **Node.js Worker Threads** (`worker_threads`), which provide a unique
 
 The primary mechanism for memory management is **Forceful Termination**.
 
-1.  When an App completes or is stopped, the Proxy calls `worker.terminate()`.
+1.  When a Worker completes or is stopped, the Proxy calls `worker.terminate()`.
 2.  This instructs V8 to immediately halt execution in that Isolate.
-3.  **Result**: The OS reclaims 100% of the memory allocated by that thread. No garbage is left behind. This makes it impossible for ephemeral apps to leak memory over time.
+3.  **Result**: The OS reclaims 100% of the memory allocated by that thread. No garbage is left behind. This makes it impossible for ephemeral workers to leak memory over time.
 
 ---
 
@@ -88,9 +88,9 @@ We mitigate this using a **Correlation ID Protocol**:
 
 ## 4. Lifecycle States
 
-An App moves through a strict State Machine (`ApplicationStateMachine`).
+A Worker moves through a strict State Machine (`WorkerStateMachine`).
 
-- **∅ (Void)**: Does not exist.
+- **Void**: Does not exist.
 - **INACTIVE**: Loaded in memory (Worker Started), but idle. `onCreate()` called.
 - **ACTIVE_BACKGROUND**: Performing work. `onActivate()` running.
 - **TERMINATING**: Shutdown sequence initiated. `onTerminate()` called.
@@ -98,10 +98,10 @@ An App moves through a strict State Machine (`ApplicationStateMachine`).
 
 ### Class Structure (Code Standard)
 
-The `ApplicationStateMachine` follows strict Link Loom Dependency Injection patterns:
+The `WorkerStateMachine` follows strict Link Loom Dependency Injection patterns:
 
 ```javascript
-class ApplicationStateMachine {
+class WorkerStateMachine {
   constructor(dependencies) {
     /* Base Properties */
     this._dependencies = dependencies;
@@ -112,7 +112,7 @@ class ApplicationStateMachine {
     // ...
 
     /* Assignments */
-    this._namespace = `[Loom]::[Apps]::[${this._name}:${this._alias}]`;
+    this._namespace = `[Loom]::[Workers]::[${this._name}:${this._alias}]`;
   }
 }
 ```
@@ -123,11 +123,11 @@ class ApplicationStateMachine {
 
 Isolation is **Enabled by Default**.
 
-To opt-out (force legacy behavior for debugging), set `APPS_ISOLATION` in your project config:
+To opt-out (force legacy behavior for debugging), set `WORKERS_ISOLATION` in your project config:
 
 ```json
 {
-  "APPS_ISOLATION": "process"
+  "WORKERS_ISOLATION": "process"
 }
 ```
 
@@ -135,10 +135,10 @@ To opt-out (force legacy behavior for debugging), set `APPS_ISOLATION` in your p
 
 ## 6. Developer Guide
 
-To create a compatible App, no special changes are needed. Write standard Loom Apps:
+To create a compatible Worker, no special changes are needed. Write standard Loom Workers:
 
 ```javascript
-class MyApp {
+class MyWorker {
   constructor(deps) {
     this.logger = deps.console;
   }
@@ -148,7 +148,7 @@ class MyApp {
     this.logger.info('Working...');
   }
 }
-module.exports = MyApp;
+module.exports = MyWorker;
 ```
 
 **Restriction**: You cannot access variables from the Main Process (e.g., `global.server`). You must rely on the passed `ctx` and `config`.
@@ -157,18 +157,18 @@ module.exports = MyApp;
 
 ## 7. API Contract
 
-To ensure interoperability and predictable behavior, all Apps must adhere to the following contract regarding Input Payloads and Return DTOs.
+To ensure interoperability and predictable behavior, all Workers must adhere to the following contract regarding Input Payloads and Return DTOs.
 
 ### 7.1 Input Payload (Execution Context)
 
-When an App is executed (via `spawn` or `activate`), it receives a **Context (`ctx`)**. The execution payload is contained within `ctx.options`.
+When a Worker is executed (via `spawn` or `activate`), it receives a **Context (`ctx`)**. The execution payload is contained within `ctx.options`.
 
 **Structure:**
 
 ```javascript
 {
   phase: 'activate',     // Lifecycle phase
-  name: 'my-app',        // App Name
+  name: 'my-worker',     // Worker Name
   alias: 'worker-001',   // Instance Alias
 
   // THE COMPUTE PAYLOAD
@@ -185,7 +185,7 @@ When an App is executed (via `spawn` or `activate`), it receives a **Context (`c
 
 ### 7.2 Output DTO (Return Value)
 
-Every App **MUST** return a DTO (Data Transfer Object) upon completion of its primary task (usually `activateBackground`).
+Every Worker **MUST** return a DTO (Data Transfer Object) upon completion of its primary task (usually `activateBackground`).
 
 **Standard Structure:**
 
@@ -213,4 +213,4 @@ Every App **MUST** return a DTO (Data Transfer Object) upon completion of its pr
 }
 ```
 
-> **Note**: For Threaded Apps, the `performance` object is automatically appended to your return value by the `ThreadedAppProxy`. You do not need to calculate it manually.
+> **Note**: For Threaded Workers, the `performance` object is automatically appended to your return value by the `ThreadedWorkerProxy`. You do not need to calculate it manually.

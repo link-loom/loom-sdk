@@ -40,7 +40,7 @@ _These modules enable business logic._
     - Runs `startup` functions (Type: `atTime`).
     - Schedules `timed` functions (Cron).
     - Hydrates `cache` functions.
-14. **AppsModule**: Spawns **Long-Run Processes**. These are persistent execution units (in-thread or isolated) for heavy workloads.
+14. **WorkersModule**: Spawns **Long-Run Processes**. These are persistent execution units (in-thread or isolated) for heavy workloads.
 15. **ApiModule**: Builds the HTTP Router and Middleware pipeline.
 
 ### Phase D: The Event Mesh (Layer 2)
@@ -111,4 +111,4 @@ Loom handles `SIGINT` (Ctrl+C) and `SIGTERM` (Docker Stop) automatically.
 3.  Triggers `performance.onTerminate()` (if enabled) to flush APM metrics.
 4.  Calls `process.exit(0)`.
 
-> **Note**: The **Apps Adapter** has its own "Guillotine" lifecycle that hooks into this process to kill Worker Threads instantly.
+> **Note**: The **Workers Adapter** has its own "Guillotine" lifecycle that hooks into this process to kill Worker Threads instantly.

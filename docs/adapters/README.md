@@ -35,17 +35,17 @@ This enables **Fire-and-Forget** flows where a service emits an event ("UserSign
 
 ---
 
-## 3. Isolated Long-Run Apps Architecture (`[Loom]::[Apps]`)
+## 3. Isolated Long-Run Workers Architecture (`[Loom]::[Workers]`)
 
 **Enables**: Heavy-Duty, Background Processing.
 
-The Apps Adapter provides **Thread-Based Isolation** (or Process-Based). It allows you to run long-lived, CPU-intensive tasks ("Apps") without blocking the main Event Loop of the orchestrator.
+The Workers Adapter provides **Thread-Based Isolation** (or Process-Based). It allows you to run long-lived, CPU-intensive tasks ("Workers") without blocking the main Event Loop of the orchestrator.
 
 - **"The Guillotine"**: A strict memory management system that kills threads upon task completion to prevent leaks.
-- **Sandboxing**: Apps run in a separate V8 Isolate, protecting the core runtime from crashes.
+- **Sandboxing**: Workers run in a separate V8 Isolate, protecting the core runtime from crashes.
 - **Use Cases**: Video processing, PDF generation, Data ingestion pipelines.
 
-[**→ Read Apps Documentation**](apps.md)
+[**→ Read Workers Documentation**](workers.md)
 
 ---
 

@@ -44,7 +44,7 @@ Detailed guides on official adapters.
 - [HTTP / API](adapters/http.md)
 - [Events / Bus](adapters/events.md)
 - [Functions](adapters/functions.md)
-- [Apps (Threaded/Process)](adapters/apps.md)
+- [Workers (Threaded/Process)](adapters/workers.md)
 
 ### 🛠 Infrastructure
 

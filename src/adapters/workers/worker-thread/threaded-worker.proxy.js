@@ -1,7 +1,7 @@
 const { Worker } = require('worker_threads');
 const path = require('path');
 
-class ThreadedAppProxy {
+class ThreadedWorkerProxy {
   constructor({ name, appPath, config, logger }) {
     this.name = name;
     this.logger = logger;
@@ -19,7 +19,7 @@ class ThreadedAppProxy {
       }
     }
 
-    this.worker = new Worker(path.join(__dirname, 'app.worker.js'), {
+    this.worker = new Worker(path.join(__dirname, 'worker.thread.js'), {
       workerData: {
         name,
         path: appPath,
@@ -50,7 +50,7 @@ class ThreadedAppProxy {
         if (msg.performance) {
           this.logger.info(`[Performance] ${this.name} Report`, {
             meta: msg.performance,
-            namespace: `[Loom]::[Apps]::[${this.name}]`,
+            namespace: `[Loom]::[Workers]::[${this.name}]`,
           });
         }
 
@@ -71,9 +71,9 @@ class ThreadedAppProxy {
   }
 
   /**
-   * Activates the app in background mode.
+   * Activates the worker in background mode.
    * @param {Object} ctx - The execution context.
-   * @returns {Promise<Object>} Resolves with the App's result DTO + `performance` metrics.
+   * @returns {Promise<Object>} Resolves with the Worker's result DTO + `performance` metrics.
    */
   async activateBackground(ctx) {
     return new Promise((resolve, reject) => {
@@ -102,4 +102,4 @@ class ThreadedAppProxy {
   // Implement other hooks as no-ops or similar bridges if needed
 }
 
-module.exports = ThreadedAppProxy;
+module.exports = ThreadedWorkerProxy;

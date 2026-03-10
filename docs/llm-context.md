@@ -22,7 +22,7 @@
 - `src/adapters/`: Transport Layers.
   - `http/`: `ApiModule`, Router, Middleware.
   - `events/`: `BusModule` (Internal), `BrokerModule` (Socket.io).
-  - `apps/`: Worker Threads logic.
+  - `workers/`: Worker Threads logic.
 - `src/utils/`: Helpers.
 
 ## 3. Common Class Signatures

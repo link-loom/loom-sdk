@@ -1,10 +1,10 @@
-// src/adapters/apps/app.state-machine.js
+// src/adapters/workers/worker.state-machine.js
 
 /**
- * ApplicationStateMachine
- * =======================
- * Deterministic, event-driven finite state machine (FSM) for a *single* App instance.
- * It orchestrates lifecycle transitions and delegates side-effects to the App hooks.
+ * WorkerStateMachine
+ * ==================
+ * Deterministic, event-driven finite state machine (FSM) for a *single* Worker instance.
+ * It orchestrates lifecycle transitions and delegates side-effects to the Worker hooks.
  *
  * Style & Conventions
  * -------------------
@@ -14,25 +14,25 @@
  *
  * States (per instance)
  * ---------------------
- *   INACTIVE           → Created & prepared; no active I/O.
- *   ACTIVE_FOREGROUND  → Fully active; foreground semantics.
- *   ACTIVE_BACKGROUND  → Active; background semantics.
- *   SUSPENDED          → I/O released; minimal footprint; rehydratable.
- *   TERMINATING        → Graceful teardown in progress.
- *   TERMINATED         → Final state; instance removed from manager.
- *   CRASHED            → Terminal fault during a hook/transition.
+ *   INACTIVE           -> Created & prepared; no active I/O.
+ *   ACTIVE_FOREGROUND  -> Fully active; foreground semantics.
+ *   ACTIVE_BACKGROUND  -> Active; background semantics.
+ *   SUSPENDED          -> I/O released; minimal footprint; rehydratable.
+ *   TERMINATING        -> Graceful teardown in progress.
+ *   TERMINATED         -> Final state; instance removed from manager.
+ *   CRASHED            -> Terminal fault during a hook/transition.
  *
  * Events (triggers)
  * -----------------
- *   CREATE                 → Bootstraps the instance (calls onCreate()).
- *   ACTIVATE_FOREGROUND    → Elevates to ACTIVE_FOREGROUND (calls onActivate('foreground')).
- *   ACTIVATE_BACKGROUND    → Elevates to ACTIVE_BACKGROUND (calls onActivate('background')).
- *   DEACTIVATE             → Drops ACTIVE_* → INACTIVE (calls onDeactivate()).
- *   SUSPEND                → Any non-terminal → SUSPENDED (calls onSuspend()).
- *   RESUME                 → SUSPENDED → INACTIVE (calls onResume()).
- *   STOP                   → Graceful termination (calls onTerminate() unless force).
- *   SIGNAL                 → Out-of-band signal passthrough (calls onSignal(sig)).
- *   FAIL                   → Forces CRASHED due to unrecoverable error.
+ *   CREATE                 -> Bootstraps the instance (calls onCreate()).
+ *   ACTIVATE_FOREGROUND    -> Elevates to ACTIVE_FOREGROUND (calls onActivate('foreground')).
+ *   ACTIVATE_BACKGROUND    -> Elevates to ACTIVE_BACKGROUND (calls onActivate('background')).
+ *   DEACTIVATE             -> Drops ACTIVE_* -> INACTIVE (calls onDeactivate()).
+ *   SUSPEND                -> Any non-terminal -> SUSPENDED (calls onSuspend()).
+ *   RESUME                 -> SUSPENDED -> INACTIVE (calls onResume()).
+ *   STOP                   -> Graceful termination (calls onTerminate() unless force).
+ *   SIGNAL                 -> Out-of-band signal passthrough (calls onSignal(sig)).
+ *   FAIL                   -> Forces CRASHED due to unrecoverable error.
  *
  * ASCII State Diagram
  * -------------------
@@ -74,19 +74,19 @@
  *
  * Error Semantics
  * ---------------
- * - If any App hook throws, the FSM transitions to CRASHED.
+ * - If any Worker hook throws, the FSM transitions to CRASHED.
  * - This module does NOT implement retries/backoff; that is a host policy concern.
  *
  * Integration Points
  * ------------------
- * - Constructed and owned by AppsModule per instance.
- * - AppsModule supplies `makeContext(phase, name, alias, options)` to build hook contexts.
- * - AppsModule persists `state/createdAt/lastTransitionAt` from this FSM as its single source of truth.
+ * - Constructed and owned by WorkersModule per instance.
+ * - WorkersModule supplies `makeContext(phase, name, alias, options)` to build hook contexts.
+ * - WorkersModule persists `state/createdAt/lastTransitionAt` from this FSM as its single source of truth.
  */
 
 const { EventEmitter } = require('node:events');
 
-const ApplicationStates = Object.freeze({
+const WorkerStates = Object.freeze({
   INACTIVE: 'INACTIVE',
   ACTIVE_FOREGROUND: 'ACTIVE_FOREGROUND',
   ACTIVE_BACKGROUND: 'ACTIVE_BACKGROUND',
@@ -96,7 +96,7 @@ const ApplicationStates = Object.freeze({
   CRASHED: 'CRASHED',
 });
 
-const ApplicationEvents = Object.freeze({
+const WorkerEvents = Object.freeze({
   CREATE: 'CREATE',
   ACTIVATE_FOREGROUND: 'ACTIVATE_FOREGROUND',
   ACTIVATE_BACKGROUND: 'ACTIVATE_BACKGROUND',
@@ -108,7 +108,7 @@ const ApplicationEvents = Object.freeze({
   FAIL: 'FAIL',
 });
 
-/** Transition table: (from, on) → { to, effect(app, ctx) } */
+/** Transition table: (from, on) -> { to, effect(app, ctx) } */
 const TRANSITIONS = new Map();
 
 /** Helper to register a transition entry */
@@ -119,83 +119,83 @@ function T(from, on, to, effect) {
 // Boot
 T(
   null,
-  ApplicationEvents.CREATE,
-  ApplicationStates.INACTIVE,
+  WorkerEvents.CREATE,
+  WorkerStates.INACTIVE,
   async (app, ctx) => {
     if (typeof app.onCreate === 'function') await app.onCreate(ctx);
   },
 );
 
-// INACTIVE → ACTIVE_*
+// INACTIVE -> ACTIVE_*
 T(
-  ApplicationStates.INACTIVE,
-  ApplicationEvents.ACTIVATE_FOREGROUND,
-  ApplicationStates.ACTIVE_FOREGROUND,
+  WorkerStates.INACTIVE,
+  WorkerEvents.ACTIVATE_FOREGROUND,
+  WorkerStates.ACTIVE_FOREGROUND,
   async (app, ctx) => {
     if (typeof app.onActivate === 'function')
       await app.onActivate('foreground', ctx);
   },
 );
 T(
-  ApplicationStates.INACTIVE,
-  ApplicationEvents.ACTIVATE_BACKGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
+  WorkerStates.INACTIVE,
+  WorkerEvents.ACTIVATE_BACKGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
   async (app, ctx) => {
     if (typeof app.onActivate === 'function')
       await app.onActivate('background', ctx);
   },
 );
 
-// ACTIVE_* → INACTIVE
+// ACTIVE_* -> INACTIVE
 for (const s of [
-  ApplicationStates.ACTIVE_FOREGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
+  WorkerStates.ACTIVE_FOREGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
 ]) {
   T(
     s,
-    ApplicationEvents.DEACTIVATE,
-    ApplicationStates.INACTIVE,
+    WorkerEvents.DEACTIVATE,
+    WorkerStates.INACTIVE,
     async (app, ctx) => {
       if (typeof app.onDeactivate === 'function') await app.onDeactivate(ctx);
     },
   );
 }
 
-// Any non-terminal → SUSPENDED; SUSPENDED → INACTIVE
+// Any non-terminal -> SUSPENDED; SUSPENDED -> INACTIVE
 for (const s of [
-  ApplicationStates.INACTIVE,
-  ApplicationStates.ACTIVE_FOREGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
+  WorkerStates.INACTIVE,
+  WorkerStates.ACTIVE_FOREGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
 ]) {
   T(
     s,
-    ApplicationEvents.SUSPEND,
-    ApplicationStates.SUSPENDED,
+    WorkerEvents.SUSPEND,
+    WorkerStates.SUSPENDED,
     async (app, ctx) => {
       if (typeof app.onSuspend === 'function') await app.onSuspend(ctx);
     },
   );
 }
 T(
-  ApplicationStates.SUSPENDED,
-  ApplicationEvents.RESUME,
-  ApplicationStates.INACTIVE,
+  WorkerStates.SUSPENDED,
+  WorkerEvents.RESUME,
+  WorkerStates.INACTIVE,
   async (app, ctx) => {
     if (typeof app.onResume === 'function') await app.onResume(ctx);
   },
 );
 
-// STOP lifecycle (two-step: TERMINATING → TERMINATED)
+// STOP lifecycle (two-step: TERMINATING -> TERMINATED)
 for (const s of [
-  ApplicationStates.INACTIVE,
-  ApplicationStates.ACTIVE_FOREGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
-  ApplicationStates.SUSPENDED,
+  WorkerStates.INACTIVE,
+  WorkerStates.ACTIVE_FOREGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
+  WorkerStates.SUSPENDED,
 ]) {
   T(
     s,
-    ApplicationEvents.STOP,
-    ApplicationStates.TERMINATING,
+    WorkerEvents.STOP,
+    WorkerStates.TERMINATING,
     async (app, ctx) => {
       const force = !!ctx?.options?.force;
       if (!force && typeof app.onTerminate === 'function') {
@@ -205,9 +205,9 @@ for (const s of [
   );
 }
 T(
-  ApplicationStates.TERMINATING,
-  ApplicationEvents.STOP,
-  ApplicationStates.TERMINATED,
+  WorkerStates.TERMINATING,
+  WorkerEvents.STOP,
+  WorkerStates.TERMINATED,
   async (_app, _ctx) => {
     /* no-op */
   },
@@ -215,29 +215,29 @@ T(
 
 // SIGNAL passthrough (no state change)
 for (const s of [
-  ApplicationStates.INACTIVE,
-  ApplicationStates.ACTIVE_FOREGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
-  ApplicationStates.SUSPENDED,
+  WorkerStates.INACTIVE,
+  WorkerStates.ACTIVE_FOREGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
+  WorkerStates.SUSPENDED,
 ]) {
-  T(s, ApplicationEvents.SIGNAL, s, async (app, ctx) => {
+  T(s, WorkerEvents.SIGNAL, s, async (app, ctx) => {
     const sig = ctx?.options?.sig || 'SIGHUP';
     if (typeof app.onSignal === 'function') await app.onSignal(sig, ctx);
   });
 }
 
-// FAIL → CRASHED (from any non-terminal)
+// FAIL -> CRASHED (from any non-terminal)
 for (const s of [
-  ApplicationStates.INACTIVE,
-  ApplicationStates.ACTIVE_FOREGROUND,
-  ApplicationStates.ACTIVE_BACKGROUND,
-  ApplicationStates.SUSPENDED,
-  ApplicationStates.TERMINATING,
+  WorkerStates.INACTIVE,
+  WorkerStates.ACTIVE_FOREGROUND,
+  WorkerStates.ACTIVE_BACKGROUND,
+  WorkerStates.SUSPENDED,
+  WorkerStates.TERMINATING,
 ]) {
   T(
     s,
-    ApplicationEvents.FAIL,
-    ApplicationStates.CRASHED,
+    WorkerEvents.FAIL,
+    WorkerStates.CRASHED,
     async (_app, _ctx) => {
       /* no-op */
     },
@@ -245,18 +245,18 @@ for (const s of [
 }
 
 /**
- * ApplicationStateMachine
- * -----------------------
- * Orchestrates state transitions and invokes App hooks atomically per transition.
+ * WorkerStateMachine
+ * ------------------
+ * Orchestrates state transitions and invokes Worker hooks atomically per transition.
  */
-class ApplicationStateMachine extends EventEmitter {
+class WorkerStateMachine extends EventEmitter {
   /**
    * @param {object} params
-   * @param {object} params.app                     - The concrete App instance (implements optional hooks).
+   * @param {object} params.app                     - The concrete Worker instance (implements optional hooks).
    * @param {function(string,string,string,object):object} params.makeContext
-   *        A function (phase, name, alias, options) => ctx, provided by AppsModule.
+   *        A function (phase, name, alias, options) => ctx, provided by WorkersModule.
    * @param {Console} [params.logger=console]       - Logger with info/error.
-   * @param {string} params.name                    - App name.
+   * @param {string} params.name                    - Worker name.
    * @param {string} params.alias                   - Instance alias.
    * @param {string|null} [params.state=null]       - Initial state (null before CREATE).
    */
@@ -272,44 +272,44 @@ class ApplicationStateMachine extends EventEmitter {
     this.name = dependencies.name;
     this.alias = dependencies.alias;
 
-    this.state = dependencies.state; // null → before CREATE
+    this.state = dependencies.state; // null -> before CREATE
     this.createdAt = Date.now();
     this.lastTransitionAt = Date.now();
 
     /* Assigments */
-    this._namespace = `[Loom]::[Apps]::[${this._name}:${this._alias}]`;
+    this._namespace = `[Loom]::[Workers]::[${this._name}:${this._alias}]`;
   }
 
   /** Public helpers (semantic) */
   async create(options) {
-    return this.transition(ApplicationEvents.CREATE, options);
+    return this.transition(WorkerEvents.CREATE, options);
   }
   async activateForeground(options) {
-    return this.transition(ApplicationEvents.ACTIVATE_FOREGROUND, options);
+    return this.transition(WorkerEvents.ACTIVATE_FOREGROUND, options);
   }
   async activateBackground(options) {
-    return this.transition(ApplicationEvents.ACTIVATE_BACKGROUND, options);
+    return this.transition(WorkerEvents.ACTIVATE_BACKGROUND, options);
   }
   async deactivate(options) {
-    return this.transition(ApplicationEvents.DEACTIVATE, options);
+    return this.transition(WorkerEvents.DEACTIVATE, options);
   }
   async suspend(options) {
-    return this.transition(ApplicationEvents.SUSPEND, options);
+    return this.transition(WorkerEvents.SUSPEND, options);
   }
   async resume(options) {
-    return this.transition(ApplicationEvents.RESUME, options);
+    return this.transition(WorkerEvents.RESUME, options);
   }
   async stop(options) {
-    return this.transition(ApplicationEvents.STOP, options);
+    return this.transition(WorkerEvents.STOP, options);
   }
   async signal(sig, options) {
-    return this.transition(ApplicationEvents.SIGNAL, {
+    return this.transition(WorkerEvents.SIGNAL, {
       ...(options || {}),
       sig,
     });
   }
   async fail(options) {
-    return this.transition(ApplicationEvents.FAIL, options);
+    return this.transition(WorkerEvents.FAIL, options);
   }
 
   /**
@@ -325,11 +325,11 @@ class ApplicationStateMachine extends EventEmitter {
     // Allow TERMINATING --STOP--> TERMINATED as a second step
     if (
       !entry &&
-      from === ApplicationStates.TERMINATING &&
-      event === ApplicationEvents.STOP
+      from === WorkerStates.TERMINATING &&
+      event === WorkerEvents.STOP
     ) {
       const last = TRANSITIONS.get(
-        `${ApplicationStates.TERMINATING}::${ApplicationEvents.STOP}`,
+        `${WorkerStates.TERMINATING}::${WorkerEvents.STOP}`,
       );
       if (last) return this.#apply(last, options);
     }
@@ -340,7 +340,7 @@ class ApplicationStateMachine extends EventEmitter {
     return this.#apply(entry, options);
   }
 
-  /** Internal entry apply with hook invocation and error → CRASHED semantics. */
+  /** Internal entry apply with hook invocation and error -> CRASHED semantics. */
   async #apply(entry, options) {
     const prev = this.state;
     const next = entry.to;
@@ -355,7 +355,7 @@ class ApplicationStateMachine extends EventEmitter {
       this.lastTransitionAt = Date.now();
 
       this.logger?.info?.(
-        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ ${next}`,
+        `[WorkerStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}-> ${next}`,
         { namespace: this._namespace },
       );
       this.emit('transition', {
@@ -369,10 +369,10 @@ class ApplicationStateMachine extends EventEmitter {
       return this.state;
     } catch (err) {
       // Any hook failure moves to CRASHED
-      this.state = ApplicationStates.CRASHED;
+      this.state = WorkerStates.CRASHED;
       this.lastTransitionAt = Date.now();
       this.logger?.error?.(
-        `[ApplicationStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}→ CRASHED :: ${err?.message}`,
+        `[WorkerStateMachine] ${this.name}:${this.alias} ${prev ?? '∅'} --${entry.on}-> CRASHED :: ${err?.message}`,
         { namespace: this._namespace },
       );
       this.emit('transition', {
@@ -380,7 +380,7 @@ class ApplicationStateMachine extends EventEmitter {
         alias: this.alias,
         from: prev,
         on: entry.on,
-        to: ApplicationStates.CRASHED,
+        to: WorkerStates.CRASHED,
         error: err,
       });
       throw err;
@@ -388,7 +388,7 @@ class ApplicationStateMachine extends EventEmitter {
   }
 
   #makeCtx(phase, options) {
-    // AppsModule provides the real context builder; keep signature stable.
+    // WorkersModule provides the real context builder; keep signature stable.
     const makeContext = this._makeContext || this.makeContext;
     if (typeof makeContext === 'function') {
       return makeContext(phase, this.name, this.alias, options);
@@ -416,22 +416,22 @@ class ApplicationStateMachine extends EventEmitter {
 /** Phase inference strictly for documentation/logging */
 function inferPhase(event) {
   switch (event) {
-    case ApplicationEvents.CREATE:
+    case WorkerEvents.CREATE:
       return 'create';
-    case ApplicationEvents.ACTIVATE_FOREGROUND:
-    case ApplicationEvents.ACTIVATE_BACKGROUND:
+    case WorkerEvents.ACTIVATE_FOREGROUND:
+    case WorkerEvents.ACTIVATE_BACKGROUND:
       return 'activate';
-    case ApplicationEvents.DEACTIVATE:
+    case WorkerEvents.DEACTIVATE:
       return 'deactivate';
-    case ApplicationEvents.SUSPEND:
+    case WorkerEvents.SUSPEND:
       return 'suspend';
-    case ApplicationEvents.RESUME:
+    case WorkerEvents.RESUME:
       return 'resume';
-    case ApplicationEvents.STOP:
+    case WorkerEvents.STOP:
       return 'terminate';
-    case ApplicationEvents.SIGNAL:
+    case WorkerEvents.SIGNAL:
       return 'signal';
-    case ApplicationEvents.FAIL:
+    case WorkerEvents.FAIL:
       return 'terminate';
     default:
       return 'unknown';
@@ -439,7 +439,11 @@ function inferPhase(event) {
 }
 
 module.exports = {
-  ApplicationStateMachine,
-  ApplicationStates,
-  ApplicationEvents,
+  WorkerStateMachine,
+  WorkerStates,
+  WorkerEvents,
+  // Backward compatibility aliases
+  ApplicationStateMachine: WorkerStateMachine,
+  ApplicationStates: WorkerStates,
+  ApplicationEvents: WorkerEvents,
 };

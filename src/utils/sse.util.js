@@ -54,6 +54,11 @@ class SseUtil {
       message += `data: ${JSON.stringify(data)}\n\n`;
 
       res.write(message);
+
+      // Flush through compression middleware to prevent buffering
+      if (typeof res.flush === 'function') {
+        res.flush();
+      }
     };
 
     /**
@@ -65,6 +70,10 @@ class SseUtil {
     stream.comment = (text) => {
       if (stream._closed) return;
       res.write(`: ${text}\n\n`);
+
+      if (typeof res.flush === 'function') {
+        res.flush();
+      }
     };
 
     /**

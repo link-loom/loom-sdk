@@ -20,6 +20,21 @@ The HTTP Adapter transforms your service into a web server. It is more than just
 
 ---
 
+## 1.1 Server-Sent Events (`[Loom]::[HTTP]::[SSE]`)
+
+**Enables**: Real-time, unidirectional Server-to-Client push.
+
+The SSE extension to the HTTP Adapter activates **streaming routes**. By adding `streaming: true` to a route config, the handler receives a `stream` controller for pushing events to the client over a persistent HTTP connection.
+
+- **Named Events**: Send typed events (`tick`, `progress`, `error`) that clients listen to via `EventSource.addEventListener()`.
+- **Auto-Reconnect**: Built into the SSE protocol via `Last-Event-ID`.
+- **Proxy-Friendly**: Works through standard HTTP infrastructure without special configuration.
+- **Use Cases**: Progress indicators, live feeds, notification push, streaming AI responses.
+
+[**→ Read SSE Documentation**](sse.md)
+
+---
+
 ## 2. Event-Driven Architecture (`[Loom]::[Events]`)
 
 **Enables**: Asynchronous, Reactive communication.

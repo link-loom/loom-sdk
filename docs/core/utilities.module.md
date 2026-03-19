@@ -16,6 +16,7 @@ The **Utilities Module** aggregates a powerful suite of helper libraries into a 
 | `utilities.io`          | `IOUtil`          | File system helpers.                  |
 | `utilities.event`       | `EventUtil`       | Event helpers.                        |
 | `utilities.performance` | `PerformanceUtil` | Measure execution time and resources. |
+| `utilities.sse`         | `SseUtil`         | Server-Sent Events stream factory.    |
 
 ## Usage Example
 

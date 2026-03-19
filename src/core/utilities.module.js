@@ -9,6 +9,7 @@ const EncoderUtil = require('../utils/encoder.util');
 const ValidatorUtil = require('../utils/validator.util');
 
 const PerformanceUtil = require('../utils/performance.util');
+const SseUtil = require('../utils/sse.util');
 
 class UtilitiesModule {
   constructor(dependencies) {
@@ -31,6 +32,7 @@ class UtilitiesModule {
     this._encoderUtil = new EncoderUtil(this._dependencies);
     this._cryptoUtil = new CryptoUtil(this._dependencies);
     this._performanceUtil = new PerformanceUtil(this._dependencies);
+    this._sseUtil = new SseUtil(this._dependencies);
   }
 
   setup() {
@@ -75,6 +77,10 @@ class UtilitiesModule {
 
   get performance() {
     return this._performanceUtil;
+  }
+
+  get sse() {
+    return this._sseUtil.sse;
   }
 }
 

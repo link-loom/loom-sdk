@@ -50,9 +50,12 @@ class ApiModule {
     // Construct the full route path.
     const routePath = `/${domain}${endpoint.httpRoute}`;
 
-    // Define the main route handler function.
-    const routeHandler = (req, res) =>
-      this.#handleRoute({ route, domain, endpoint, req, res });
+    // Select handler based on streaming flag.
+    const routeHandler = endpoint.streaming
+      ? (req, res) =>
+          this.#handleStreamRoute({ route, domain, endpoint, req, res })
+      : (req, res) =>
+          this.#handleRoute({ route, domain, endpoint, req, res });
 
     // An array to hold any middleware functions that need to be applied.
     const middlewares = [];
@@ -95,6 +98,36 @@ class ApiModule {
     });
 
     res.status(serviceResponse?.status || 200).json(serviceResponse);
+  }
+
+  /**
+   * Handles SSE (Server-Sent Events) streaming routes.
+   *
+   * Creates an SSE stream via the sse utility and passes it to the route handler.
+   * The handler controls the stream lifecycle — this method does NOT send a JSON response.
+   */
+  async #handleStreamRoute({ route, domain, endpoint, req, res }) {
+    const params = this._utilities.io.request.getParameters(req);
+    const headers = req.headers;
+    const stream = this._utilities.sse.createStream(res);
+
+    try {
+      await route[endpoint.handler]({
+        params,
+        req,
+        res,
+        headers,
+        stream,
+      });
+    } catch (error) {
+      if (!stream.closed) {
+        stream.send(
+          { success: false, message: error?.message || 'Stream error' },
+          { event: 'error' },
+        );
+        stream.close();
+      }
+    }
   }
 
   /**

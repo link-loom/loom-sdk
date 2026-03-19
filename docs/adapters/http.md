@@ -80,7 +80,24 @@ The `ApiModule` abstracts the raw Express `req` object into a cleaner `ctx` obje
 | `ctx.req`     | `req`                                 | Fallback for low-level access (streaming, etc).                            |
 | `ctx.res`     | `res`                                 | Fallback for custom responses (redirects, files).                          |
 
-## 4. Middleware Pipeline
+## 4. Streaming Routes (SSE)
+
+For real-time server-to-client push, add `streaming: true` to a route config. The handler receives a `stream` object in its context instead of returning a JSON response.
+
+```javascript
+{
+  method: 'GET',
+  httpRoute: '/live',
+  route: 'routes/api/events/events.route',
+  handler: 'stream',
+  protected: false,
+  streaming: true,  // ← Activates SSE mode
+}
+```
+
+[**→ Read SSE Documentation**](sse.md)
+
+## 5. Middleware Pipeline
 
 The pipeline is constructed dynamically for every endpoint:
 

@@ -18,6 +18,7 @@ class Loom {
     this._functionsModule = {};
     this._eventBrokerModule = {};
     this._eventBrokerModule = {};
+    this._streamModule = {};
     this._namespace = '[Loom]';
   }
 
@@ -90,6 +91,8 @@ class Loom {
     this.#setupModels();
 
     this.#setupServices();
+
+    this.#setupStreams();
 
     this.#setupFunctions();
 
@@ -181,6 +184,17 @@ class Loom {
 
     this._dependenciesModule.core.add(this._serviceModule, 'ServiceModule');
     this._dependenciesModule.core.add(this._serviceModule.services, 'services');
+  }
+
+  #setupStreams() {
+    const { StreamModule } = require('./adapters/streams/stream.module');
+    this._streamModule = new StreamModule(
+      this._dependenciesModule.core.get(),
+    );
+    this._streamModule.setup();
+
+    this._dependenciesModule.core.add(this._streamModule, 'StreamModule');
+    this._dependenciesModule.core.add(this._streamModule.streams, 'streams');
   }
 
   #setupApi() {

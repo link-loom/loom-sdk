@@ -60,6 +60,6 @@
     "lint": "eslint src/**/*.{js,jsx}",
     "format": "prettier --write **/*.{js,jsx}",
     "version-patch": "npm version patch && git push && git push --tags",
-    "version-publish": "npm publish"
+    "version-deploy": "npm publish"
   }
 }

@@ -11,13 +11,25 @@ The configuration is divided into **Global Settings** and **Modules**.
   "server": {
     "port": "3601",
     "name": "My Service",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "bodyParserLimit": "100kb"
   },
   "modules": {
     /* Module Definitions */
   }
 }
 ```
+
+## Server Settings
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `port` | `string` | `"8080"` | Port to listen on (overridden by `PORT` env var) |
+| `name` | `string` | — | Service name (used in logs and OpenAPI docs) |
+| `version` | `string` | — | Service version |
+| `id` | `string` | — | Service identifier |
+| `secret` | `string` | — | JWT signing secret |
+| `bodyParserLimit` | `string` | `"100kb"` | Max request body size (overridden by `BODY_PARSER_LIMIT` env var). Accepts values like `'100kb'`, `'1mb'`, `'5mb'`. Individual routes can override this with the `bodyLimit` route property — see [HTTP Adapter docs](../adapters/http.md#6-per-route-body-limit). |
 
 ## Configuring Modules
 

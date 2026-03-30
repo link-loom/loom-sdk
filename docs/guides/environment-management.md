@@ -34,6 +34,7 @@ LINKLOOM_CLOUD_ENVIRONMENT_NAME=production  # Optional (defaults to 'development
     - URL: `${LINKLOOM_CLOUD_SERVICE_URL}/?environment_type=${ENVIRONMENT_NAME}`
     - Header: `Authorization: Bearer ${LINKLOOM_CLOUD_API_KEY}`
 3.  **Injection**: The returned JSON object **completely replaces** the local `dependencies.config` object.
+4.  **Interface Wrapping**: The plain object is automatically wrapped with `.has()` and `.get()` methods to ensure compatibility with the `node-config` interface used by SDK modules internally.
 
 ### Priority Rule
 
@@ -41,7 +42,21 @@ LINKLOOM_CLOUD_ENVIRONMENT_NAME=production  # Optional (defaults to 'development
 
 If SaaS mode is active and successful, the local `config/default.json` is ignored (or overwritten). If the fetch fails, the system logs an error and may fallback to local config or exit, depending on severity.
 
+### Config Interface Compatibility
+
+In both modes, `dependencies.config` is guaranteed to support:
+
+```javascript
+// Works identically in local and cloud mode
+config.has('server.port');        // boolean — checks existence via dot-notation
+config.get('server.port');        // value — throws if not found
+config.server.port;               // value — direct property access
+```
+
+This means SDK modules (such as the Workers module) that call `config.has()` or `config.get()` work transparently regardless of the configuration source. Services using Link Loom Cloud do not need a local `config/default.json` for the SDK to function correctly.
+
 ## Best Practices
 
 - **Local**: Use `default.json` for structure and non-sensitive defaults.
 - **Production**: Use Link Loom Cloud for sensitive credentials (DB passwords, Stripe keys) so they are never committed to Git.
+- **Workers**: Services that use the Workers module work in both modes without any additional configuration — the config interface is normalized automatically.

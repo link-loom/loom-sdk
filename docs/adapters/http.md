@@ -101,16 +101,90 @@ For real-time server-to-client push, add `streaming: true` to a route config. Th
 
 The pipeline is constructed dynamically for every endpoint:
 
-1.  **Storage (`multer`)**: Injected if `supportFile: true`.
-2.  **Validator**: Injected if `protected: true`. Validates `ctx.params` against the Service Schema.
-3.  **Handler**: The final execution wrapper that calls your Route Class.
+1.  **Body Limit (`body-parser`)**: Injected if `bodyLimit` is set. Overrides the global body-parser limit for this route only.
+2.  **Storage (`multer`)**: Injected if `supportFile: true`.
+3.  **Validator**: Injected if `protected: true`. Validates `ctx.params` against the Service Schema.
+4.  **Handler**: The final execution wrapper that calls your Route Class.
 
 ```mermaid
 graph LR
     Req[Request] --> Router
-    Router -->|protected?| Validator
+    Router -->|bodyLimit?| BodyParser[Body Parser Override]
+    BodyParser -->|supportFile?| Multer
+    Multer -->|protected?| Validator
     Validator -->|valid| Handler
     Handler --> RouteClass
     RouteClass --> Service
     Service --> DB
+```
+
+## 6. Per-Route Body Limit
+
+By default, all routes share the global body-parser limit (100KB unless configured otherwise via `BODY_PARSER_LIMIT` env var or `server.bodyParserLimit` config). Some endpoints — such as webhook receivers or data import APIs — may need to accept larger payloads.
+
+Instead of increasing the global limit (which would expose all routes to large payloads), you can set a **per-route limit** using the `bodyLimit` property:
+
+```javascript
+{
+  method: 'POST',
+  httpRoute: '/trigger/webhooks/:mode/:bindingId',
+  route: 'routes/api/webhooks/webhook.route',
+  handler: 'handleWebhook',
+  protected: false,
+  bodyLimit: '5mb',  // Only this route accepts up to 5MB
+}
+```
+
+### How It Works
+
+When `bodyLimit` is set on a route, the SDK injects a dedicated `body-parser` middleware **before** the route handler. This middleware parses the request body with the specified limit, overriding the global parser for that specific route.
+
+The global parser still applies to all other routes — they remain protected by the default limit.
+
+### Route Definition Properties
+
+| Property      | Type      | Required | Default   | Description                                           |
+| :------------ | :-------- | :------- | :-------- | :---------------------------------------------------- |
+| `method`      | `string`  | Yes      | —         | HTTP method (`GET`, `POST`, `PATCH`, `DELETE`)        |
+| `httpRoute`   | `string`  | Yes      | —         | Express route path (supports `:params`)               |
+| `route`       | `string`  | Yes      | —         | Path to the Route class file                          |
+| `handler`     | `string`  | Yes      | —         | Method name to invoke on the Route class              |
+| `protected`   | `boolean` | Yes      | —         | Whether JWT validation middleware is applied           |
+| `supportFile` | `boolean` | No       | `false`   | Enables `multer` file upload middleware               |
+| `streaming`   | `boolean` | No       | `false`   | Enables SSE mode ([docs](sse.md))                    |
+| `bodyLimit`   | `string`  | No       | _(global)_ | Max body size for this route (`'1mb'`, `'5mb'`, etc.) |
+
+### When to Use Per-Route Limits
+
+| Scenario | Recommendation |
+| :--- | :--- |
+| Webhook endpoints receiving external payloads (emails, events) | `bodyLimit: '5mb'` |
+| File metadata or batch import APIs | `bodyLimit: '2mb'` |
+| Standard CRUD endpoints | No `bodyLimit` needed (use global default) |
+| Public-facing APIs with untrusted input | Keep the default `100kb` |
+
+### Example: Webhook Receiver for Email Processing
+
+```javascript
+// src/routes/api/workflow/triggers.routes.js
+module.exports = {
+  'workflow-orchestration': [
+    {
+      method: 'POST',
+      httpRoute: '/trigger/webhooks/:mode/:flowDefinitionId',
+      route: 'routes/api/workflow/triggers/webhook.route',
+      handler: 'handleWebhook',
+      protected: false,
+      bodyLimit: '5mb',  // Email payloads can exceed 100KB
+    },
+    {
+      method: 'GET',
+      httpRoute: '/trigger/webhooks/:bindingId/status',
+      route: 'routes/api/workflow/triggers/webhook.route',
+      handler: 'getStatus',
+      protected: true,
+      // No bodyLimit — uses global default (GET has no body anyway)
+    },
+  ],
+};
 ```

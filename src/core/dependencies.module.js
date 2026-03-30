@@ -164,8 +164,7 @@ class DependenciesModule {
       const linkLoomCloudEnvironment =
         veripassResponse.data?.result?.items?.[0]?.variables;
 
-      this._dependencies.config = linkLoomCloudEnvironment;
-
+      this._dependencies.config = this.#wrapConfigObject(linkLoomCloudEnvironment);
 
       console.log(` ${this._dependencies.colors.green(this._namespace)}: Running Link Loom Cloud environment variables`);
 
@@ -264,6 +263,46 @@ class DependenciesModule {
       add: this.addCustomDependency.bind(this),
       get: this.getDependencies.bind(this),
     };
+  }
+
+  /**
+   * Wraps a plain object with .has() and .get() methods compatible with
+   * the node-config interface. This ensures that code relying on
+   * config.has() / config.get() works regardless of whether the config
+   * was loaded from node-config (local) or Link Loom Cloud (plain object).
+   */
+  #wrapConfigObject(plainObj) {
+    if (!plainObj || typeof plainObj !== 'object') return plainObj;
+    if (typeof plainObj.has === 'function' && typeof plainObj.get === 'function') return plainObj;
+
+    plainObj.has = function (key) {
+      const parts = key.split('.');
+      let current = this;
+      for (const part of parts) {
+        if (current == null || typeof current !== 'object' || !(part in current)) {
+          return false;
+        }
+        current = current[part];
+      }
+      return true;
+    };
+
+    plainObj.get = function (key) {
+      const parts = key.split('.');
+      let current = this;
+      for (const part of parts) {
+        if (current == null || typeof current !== 'object') {
+          throw new Error(`Configuration property "${key}" is not defined`);
+        }
+        current = current[part];
+      }
+      if (current === undefined) {
+        throw new Error(`Configuration property "${key}" is not defined`);
+      }
+      return current;
+    };
+
+    return plainObj;
   }
 }
 

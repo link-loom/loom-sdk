@@ -49,11 +49,14 @@ class SettingsModule {
   }
 
   #ioConfigs() {
-    // use body parser so we can get info from POST and/or URL parameters
+    const defaultLimit = process.env.BODY_PARSER_LIMIT
+      || this._config?.server?.bodyParserLimit
+      || '100kb';
+
     this._express.use(
-      this._dependencies.bodyParser.urlencoded({ extended: true }),
-    ); // support encoded bodies
-    this._express.use(this._dependencies.bodyParser.json()); // support json encoded bodies
+      this._dependencies.bodyParser.urlencoded({ extended: true, limit: defaultLimit }),
+    );
+    this._express.use(this._dependencies.bodyParser.json({ limit: defaultLimit }));
     this._express.use(this._dependencies.cookieParser());
   }
 

@@ -60,6 +60,11 @@ class ApiModule {
     // An array to hold any middleware functions that need to be applied.
     const middlewares = [];
 
+    // If the endpoint defines a custom body size limit, add a dedicated parser.
+    if (endpoint.bodyLimit) {
+      middlewares.push(this._dependencies.bodyParser.json({ limit: endpoint.bodyLimit }));
+    }
+
     // If the component supports file uploads, add the file handling middleware.
     if (endpoint.supportFile) {
       middlewares.push(this._storage.single('file'));

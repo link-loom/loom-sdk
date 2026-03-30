@@ -1,6 +1,6 @@
 {
   "name": "@link-loom/sdk",
-  "version": "7.3.49",
+  "version": "7.3.50",
   "description": "The Enterprise Runtime Orchestrator for Node.js. A deterministic runtime foundation for building scalable, event-driven microservices. Enforces explicit dependency injection, managed lifecycles, and architectural primitives (Event-driven Architecture, Long-Run Apps, Serverless Functions, Api Rest Architecture) for professional Node.js ecosystems.",
   "main": "index.js",
   "publishConfig": {

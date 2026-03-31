@@ -53,6 +53,7 @@ class SettingsModule {
       || this._config?.server?.bodyParserLimit
       || '100kb';
 
+    this._express.set('query parser', 'extended');
     this._express.use(
       this._dependencies.bodyParser.urlencoded({ extended: true, limit: defaultLimit }),
     );

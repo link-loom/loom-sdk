@@ -49,15 +49,9 @@ class SettingsModule {
   }
 
   #ioConfigs() {
-    const defaultLimit = process.env.BODY_PARSER_LIMIT
-      || this._config?.server?.bodyParserLimit
-      || '100kb';
-
     this._express.set('query parser', 'extended');
-    this._express.use(
-      this._dependencies.bodyParser.urlencoded({ extended: true, limit: defaultLimit }),
-    );
-    this._express.use(this._dependencies.bodyParser.json({ limit: defaultLimit }));
+    // Body parsing (json + urlencoded) is handled per-route in ApiModule
+    // so each endpoint can define its own size limit via the bodyLimit property.
     this._express.use(this._dependencies.cookieParser());
   }
 

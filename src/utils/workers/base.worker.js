@@ -77,17 +77,41 @@ class BaseWorker {
   async handleSignal(_sig, _ctx) {}
 
   // -------------------------
+  // Defensive lifecycle logging
+  // -------------------------
+  // A lifecycle log must NEVER crash the worker. These adapters run OUTSIDE the
+  // worker's own try/catch (which lives inside activateBackground), so if a
+  // console call throws — e.g. serializing `ctx` (payload/options/adapters) with
+  // circular refs or unserializable values, or a misconfigured console — that
+  // throw escapes the hook and forces the FSM to CRASHED, masking the real
+  // outcome even when activateBackground already succeeded. Swallow logging
+  // errors so only genuine hook failures can affect state.
+  #safeLog(level, message, meta) {
+    try {
+      this._console?.[level]?.(message, meta);
+    } catch (_logError) {
+      // The structured logger failed (e.g. a non-serializable ctx). Fall back to
+      // a plain console so the event stays visible instead of vanishing. A plain
+      // string console.log cannot throw, so no extra guard is needed.
+      if (message) {
+        // eslint-disable-next-line no-console
+        console.log(`[${this._namespace}] ${level}: ${message}`);
+      }
+    }
+  }
+
+  // -------------------------
   // FSM Hook Adapters
   // (do not override; override the virtuals above)
   // -------------------------
   async onCreate(ctx) {
-    this._console.info('onCreate:start', { namespace: this._namespace, ctx });
+    this.#safeLog('info', 'onCreate:start', { namespace: this._namespace, ctx });
     await this.setup(ctx);
-    this._console.success('onCreate:done', { namespace: this._namespace });
+    this.#safeLog('success', 'onCreate:done', { namespace: this._namespace });
   }
 
   async onActivate(mode, ctx) {
-    this._console.info('onActivate:start', {
+    this.#safeLog('info', 'onActivate:start', {
       namespace: this._namespace,
       mode,
       ctx,
@@ -97,44 +121,48 @@ class BaseWorker {
     } else {
       await this.activateBackground(ctx);
     }
-    this._console.success('onActivate:done', {
+    this.#safeLog('success', 'onActivate:done', {
       namespace: this._namespace,
       mode,
     });
   }
 
   async onDeactivate(ctx) {
-    this._console.info('onDeactivate:start', {
+    this.#safeLog('info', 'onDeactivate:start', {
       namespace: this._namespace,
       ctx,
     });
     await this.deactivate(ctx);
-    this._console.success('onDeactivate:done', { namespace: this._namespace });
+    this.#safeLog('success', 'onDeactivate:done', {
+      namespace: this._namespace,
+    });
   }
 
   async onSuspend(ctx) {
-    this._console.info('onSuspend:start', { namespace: this._namespace, ctx });
+    this.#safeLog('info', 'onSuspend:start', { namespace: this._namespace, ctx });
     await this.suspend(ctx);
-    this._console.success('onSuspend:done', { namespace: this._namespace });
+    this.#safeLog('success', 'onSuspend:done', { namespace: this._namespace });
   }
 
   async onResume(ctx) {
-    this._console.info('onResume:start', { namespace: this._namespace, ctx });
+    this.#safeLog('info', 'onResume:start', { namespace: this._namespace, ctx });
     await this.resume(ctx);
-    this._console.success('onResume:done', { namespace: this._namespace });
+    this.#safeLog('success', 'onResume:done', { namespace: this._namespace });
   }
 
   async onTerminate(ctx) {
-    this._console.info('onTerminate:start', {
+    this.#safeLog('info', 'onTerminate:start', {
       namespace: this._namespace,
       ctx,
     });
     await this.terminate(ctx);
-    this._console.success('onTerminate:done', { namespace: this._namespace });
+    this.#safeLog('success', 'onTerminate:done', {
+      namespace: this._namespace,
+    });
   }
 
   async onSignal(sig, ctx) {
-    this._console.info('onSignal', { namespace: this._namespace, sig, ctx });
+    this.#safeLog('info', 'onSignal', { namespace: this._namespace, sig, ctx });
     await this.handleSignal(sig, ctx);
   }
 }

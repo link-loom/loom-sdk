@@ -213,6 +213,26 @@ T(
   },
 );
 
+// Terminal states: STOP is idempotent (no-op -> TERMINATED).
+// Without this, a host cleaning up a worker that already reached CRASHED (or
+// TERMINATED) throws `Invalid transition from "CRASHED" on "STOP"`, which — if
+// the caller stops in a finally — masks the real crash error. Additive: does
+// not alter any existing valid transition; only makes cleanup safe.
+for (const s of [WorkerStates.CRASHED, WorkerStates.TERMINATED]) {
+  T(s, WorkerEvents.STOP, WorkerStates.TERMINATED, async (app, ctx) => {
+    // Idempotent terminal cleanup. We deliberately do NOT run worker teardown
+    // hooks here — an instance that already reached a terminal state (esp.
+    // CRASHED) may be inconsistent and re-running onTerminate could throw again.
+    // We DO emit a greppable marker so this post-crash/terminal-stop path is
+    // observable in prod: a spike of these means workers are crashing.
+    const logger = app?._console || ctx?.logger;
+    logger?.info?.(
+      '[Worker::terminal-stop] STOP on terminal state — idempotent cleanup (no teardown hooks run)',
+      { namespace: app?._namespace },
+    );
+  });
+}
+
 // SIGNAL passthrough (no state change)
 for (const s of [
   WorkerStates.INACTIVE,
@@ -266,6 +286,10 @@ class WorkerStateMachine extends EventEmitter {
     /* Base Properties */
     this._dependencies = dependencies;
     this._console = dependencies.console;
+    // `logger` is referenced by #apply for transition audit (incl. the move to
+    // CRASHED). It was never assigned -> those logs were silently dropped,
+    // hiding the real crash cause. Alias it to the injected console.
+    this.logger = dependencies.console || console;
 
     /* Custom Properties */
     this.app = dependencies.app;
@@ -277,7 +301,7 @@ class WorkerStateMachine extends EventEmitter {
     this.lastTransitionAt = Date.now();
 
     /* Assigments */
-    this._namespace = `[Loom]::[Workers]::[${this._name}:${this._alias}]`;
+    this._namespace = `[Loom]::[Workers]::[${this.name}:${this.alias}]`;
   }
 
   /** Public helpers (semantic) */

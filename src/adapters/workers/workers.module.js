@@ -460,24 +460,28 @@ class WorkersModule {
     const instance = workerRegistry.instances.get(alias);
     if (!instance) return;
 
-    // -> TERMINATING
-    await instance.stateMachine.stop({ force });
-
-    // -> TERMINATED
-    await instance.stateMachine.stop();
-
-    // drop reference after TERMINATED
-    workerRegistry.instances.delete(alias);
-    this._registry.set(name, workerRegistry);
-
-    // Clean PID
+    // Read the pid before teardown so the finally can always clean the indexes,
+    // even if a state-machine transition throws.
     const pid = this._instanceIndex.get(`${name}:${alias}`);
-    if (pid) {
-      this._instanceIndex.delete(`${name}:${alias}`);
-      this._processIndex.delete(pid);
-    }
 
-    this._globalAliasIndex.delete(alias);
+    try {
+      // -> TERMINATING
+      await instance.stateMachine.stop({ force });
+
+      // -> TERMINATED
+      await instance.stateMachine.stop();
+    } finally {
+      // Always drop the reference and indexes. Otherwise a worker that fails to
+      // stop cleanly (e.g. a transition error) would leak its instance plus its
+      // alias/pid index entries permanently in this long-running process.
+      workerRegistry.instances.delete(alias);
+      this._registry.set(name, workerRegistry);
+      if (pid) {
+        this._instanceIndex.delete(`${name}:${alias}`);
+        this._processIndex.delete(pid);
+      }
+      this._globalAliasIndex.delete(alias);
+    }
 
     this._console.success(
       `Stopped ${name}:${alias} [pid=${pid}] -> TERMINATED`,

@@ -102,6 +102,12 @@ class ApiModule {
       headers,
     });
 
+    // A handler that already wrote to the response (e.g. streamed a file with its own
+    // headers) owns the transport; replying JSON on top would throw ERR_HTTP_HEADERS_SENT.
+    if (res.headersSent) {
+      return;
+    }
+
     res.status(serviceResponse?.status || 200).json(serviceResponse);
   }
 

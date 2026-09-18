@@ -114,10 +114,13 @@ class LangUtil {
   }
 
   forEachExtension() {
+    // Not enumerable: `for...in` over an array must list its indexes only. An enumerable extension
+    // reaches every library that copies arrays that way — and since it is also read-only, the copy
+    // throws instead of ignoring it (pdfkit embedding a font is one of them).
     // eslint-disable-next-line no-extend-native
     Object.defineProperty(Array.prototype, 'asyncForEach', {
       writable: false,
-      enumerable: true,
+      enumerable: false,
       configurable: false,
       value: async function (callback, thisArg) {
         thisArg = thisArg || {};

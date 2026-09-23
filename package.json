@@ -3,6 +3,13 @@
   "version": "7.3.54",
   "description": "The Enterprise Runtime Orchestrator for Node.js. A deterministic runtime foundation for building scalable, event-driven microservices. Enforces explicit dependency injection, managed lifecycles, and architectural primitives (Event-driven Architecture, Long-Run Apps, Serverless Functions, Api Rest Architecture) for professional Node.js ecosystems.",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "src",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -59,6 +66,7 @@
   "scripts": {
     "lint": "eslint src/**/*.{js,jsx}",
     "format": "prettier --write **/*.{js,jsx}",
+    "test": "node --test test/*.test.js",
     "version-patch": "npm version patch && git push && git push --tags",
     "version-deploy": "npm publish"
   }

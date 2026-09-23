@@ -167,6 +167,8 @@ class WorkersModule {
     /* Custom Properties */
     this._path = dependencies.path;
     this._root = dependencies.root;
+    this._sourceRoot =
+      dependencies.namespace?.sourceRoot || this._path.join(this._root, 'src');
 
     /* Assigments */
     this._namespace = '[Loom]::[Workers]';
@@ -716,8 +718,7 @@ class WorkersModule {
   #loadManifest() {
     try {
       const manifestPath = this._path.join(
-        this._root,
-        'src',
+        this._sourceRoot,
         'workers',
         'index',
       );
@@ -766,8 +767,7 @@ class WorkersModule {
         }
 
         const pathname = this._path.join(
-          this._root,
-          'src',
+          this._sourceRoot,
           workerRegistryEntry.route,
         );
         // eslint-disable-next-line import/no-dynamic-require, global-require

@@ -19,7 +19,16 @@ class ServiceModule {
   }
 
   #loadServices() {
-    this._services = require(`${this._dependencies.root}/src/services/index`);
+    this._services = require(
+      this._dependencies.path.join(this.#sourceRoot, 'services', 'index'),
+    );
+  }
+
+  get #sourceRoot() {
+    return (
+      this._dependencies.namespace?.sourceRoot ||
+      this._dependencies.path.join(this._dependencies.root, 'src')
+    );
   }
 
   get services() {

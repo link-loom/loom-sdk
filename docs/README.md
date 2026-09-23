@@ -19,6 +19,7 @@ Link Loom is not just a framework; it's a **runtime orchestrator**. It standardi
 - [Project Structure](guides/project-structure.md) - Understanding the template.
 - [Configuration](guides/configuration.md) - Configuring modules and providers.
 - [Environment Management](guides/environment-management.md) - Local vs SaaS (Vault).
+- [Namespaces](guides/namespaces.md) - Several modules with their own routes, services, models and database in one service.
 - [Deployment](guides/deployment.md) - Production setup.
 
 ### 🏗 Architecture

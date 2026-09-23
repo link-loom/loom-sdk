@@ -24,6 +24,7 @@ This is not merely a web framework. Link Loom operates as the **Application Back
 - [**Project Structure**](docs/guides/project-structure.md) — Analysis of the `loom-svc-js` template.
 - [**Configuration Strategies**](docs/guides/configuration.md) — Module provisioning and `default.json` schema.
 - [**Environment Management**](docs/guides/environment-management.md) — Local Injection vs **Link Loom Cloud Vault** Runtime Fetch.
+- [**Namespaces**](docs/guides/namespaces.md) — Several modules with their own routes, services, models and database in one service.
 - [**Deployment Standards**](docs/guides/deployment.md) — Production optimization, Containerization, and Process Management.
 
 ### Architecture & Concepts

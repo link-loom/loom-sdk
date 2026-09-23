@@ -22,9 +22,7 @@ class StreamModule {
     let manifest;
 
     try {
-      manifest = require(
-        this._path.join(this._dependencies.root, 'src', 'streams', 'index'),
-      );
+      manifest = require(this._path.join(this.#sourceRoot, 'streams', 'index'));
     } catch {
       // No streams directory — module is a no-op
       return;
@@ -40,12 +38,18 @@ class StreamModule {
           namespace: this._namespace,
         });
       } catch (error) {
-        this._console.error(
-          `Stream failed: ${name} — ${error.message}`,
-          { namespace: this._namespace },
-        );
+        this._console.error(`Stream failed: ${name} — ${error.message}`, {
+          namespace: this._namespace,
+        });
       }
     }
+  }
+
+  get #sourceRoot() {
+    return (
+      this._dependencies.namespace?.sourceRoot ||
+      this._path.join(this._dependencies.root, 'src')
+    );
   }
 
   /** Get all stream instances */

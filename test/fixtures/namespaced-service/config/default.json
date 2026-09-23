@@ -1,0 +1,11 @@
+{
+  "server": { "port": "3799", "name": "Namespaces fixture", "version": "1.0.0", "id": "fixture", "secret": "fixture-secret" },
+  "services": { "apiModule": { "secret": "fixture-api-secret" } },
+  "modules": {
+    "database": { "settings": { "enabled": true, "default": "memory" }, "providers": { "memory": { "settings": { "dbName": "default-db" } } } },
+    "storage": { "settings": { "enabled": false } },
+    "push": { "settings": { "enabled": false } },
+    "observability": { "settings": { "enabled": false } }
+  },
+  "namespaces": { "ghost": { "enabled": false } }
+}

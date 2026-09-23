@@ -55,6 +55,15 @@ class MyRoute {
 }
 ```
 
+### Namespaces
+
+- The default namespace is the service's own `src/` tree, mounted at `/`. Never move it.
+- Extra namespaces are declared in `src/namespaces/index.js` as `{ name, root, prefix? }` (`root` relative to `src/`, `prefix` chosen by the developer; the SDK adds no `/api` or version). Each namespace folder repeats `routes/router.js`, `services/index.js`, `models/index.js` and optionally `functions/`, `workers/`, `streams/`, `events/`; every `route` is relative to the namespace folder.
+- A namespace's `deps.services` / `deps.models` are only its own. Never reach another namespace's services, models or database.
+- The database is chosen by each service: `this._databaseName` next to `this._tableName`, passed as `databaseName` on every provider call.
+- Route auth is per route: `auth: '<handler>'` (handlers in `src/auth/index.js`, `authenticate({ req, params, headers })` → `success(principal)` / `error(message, { status })`) or `auth: 'public'`. Route handlers receive `principal`.
+- Guide: `docs/guides/namespaces.md`.
+
 ## 4. Key Dependencies available in `deps`
 
 - `deps.console`: Logger.
@@ -62,6 +71,8 @@ class MyRoute {
 - `deps.utilities`: Access to `crypto`, `validator`, `generator`.
 - `deps.database.client`: Raw DB Driver.
 - `deps.eventBus.bus`: Internal EventEmitter.
+- `deps.namespace`: `{ name, prefix, sourceRoot, config }` inside a namespace; `undefined` in the default namespace.
+- `deps.NamespacesModule`: loaded namespaces (`namespaces`, `get(name)`).
 
 ---
 

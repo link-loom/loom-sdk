@@ -40,7 +40,7 @@ class EventProducerModule {
 
   #registerDynamicEvents(consumer) {
     this._eventSystemDefinition = require(
-      `${this._dependencies.root}/src/events/index`,
+      this._path.join(this.#sourceRoot, 'events', 'index'),
     );
 
     this.#subscribeTopics({ consumer });
@@ -105,11 +105,7 @@ class EventProducerModule {
     }
 
     /* Setup config */
-    const pathname = this._path.join(
-      this._dependencies.root,
-      'src',
-      eventSettings.filename,
-    );
+    const pathname = this._path.join(this.#sourceRoot, eventSettings.filename);
 
     /* Setup event */
     const Event = require(pathname);
@@ -145,6 +141,13 @@ class EventProducerModule {
 
   get definition() {
     return this._eventSystemDefinition.broker;
+  }
+
+  get #sourceRoot() {
+    return (
+      this._dependencies.namespace?.sourceRoot ||
+      this._path.join(this._dependencies.root, 'src')
+    );
   }
 }
 

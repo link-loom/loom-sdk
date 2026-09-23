@@ -79,6 +79,7 @@ The `ApiModule` abstracts the raw Express `req` object into a cleaner `ctx` obje
 | `ctx.headers` | `req.headers`                         | Raw headers.                                                               |
 | `ctx.req`     | `req`                                 | Fallback for low-level access (streaming, etc).                            |
 | `ctx.res`     | `res`                                 | Fallback for custom responses (redirects, files).                          |
+| `ctx.principal` | Authentication handler              | The principal returned by the route's `auth` handler; `undefined` on routes without one. See [Namespaces](../guides/namespaces.md#route-authentication). |
 
 ## 4. Streaming Routes (SSE)
 
@@ -149,7 +150,8 @@ The global parser still applies to all other routes — they remain protected by
 | `httpRoute`   | `string`  | Yes      | —         | Express route path (supports `:params`)               |
 | `route`       | `string`  | Yes      | —         | Path to the Route class file                          |
 | `handler`     | `string`  | Yes      | —         | Method name to invoke on the Route class              |
-| `protected`   | `boolean` | Yes      | —         | Whether JWT validation middleware is applied           |
+| `protected`   | `boolean` | No       | `false`   | Whether JWT validation middleware is applied           |
+| `auth`        | `string`  | No       | _(none)_  | Name of an authentication handler registered in `src/auth/index.js`; `'public'` leaves the route open; an unregistered name answers `500` ([docs](../guides/namespaces.md#route-authentication)) |
 | `supportFile` | `boolean` | No       | `false`   | Enables `multer` file upload middleware               |
 | `streaming`   | `boolean` | No       | `false`   | Enables SSE mode ([docs](sse.md))                    |
 | `bodyLimit`   | `string`  | No       | _(global)_ | Max body size for this route (`'1mb'`, `'5mb'`, etc.) |

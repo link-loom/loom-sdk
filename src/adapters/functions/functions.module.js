@@ -10,8 +10,11 @@ class FunctionsModule {
 
     /* Assigments */
     this._namespace = '[Loom]::[Functions]';
+    this._sourceRoot =
+      this._dependencies.namespace?.sourceRoot ||
+      this._path.join(this._dependencies.root, 'src');
     this._cluster = require(
-      this._path.join(this._dependencies.root, 'src/functions/index'),
+      this._path.join(this._sourceRoot, 'functions', 'index'),
     );
     this._functions = {
       cache: {},
@@ -34,7 +37,7 @@ class FunctionsModule {
     });
 
     // build all cache functions
-    this._cluster.cache.map((functionDefinition) => {
+    (this._cluster.cache || []).map((functionDefinition) => {
       try {
         this._console.info(`Setting up ${functionDefinition.name} function`, {
           namespace: this._namespace,
@@ -43,8 +46,7 @@ class FunctionsModule {
         /* Setup config */
         const functionName = functionDefinition.name;
         const pathname = this._path.join(
-          this._dependencies.root,
-          'src',
+          this._sourceRoot,
           functionDefinition.route,
         );
         const Function = require(pathname);
@@ -69,7 +71,7 @@ class FunctionsModule {
     });
 
     // build each timed routes
-    this._cluster.timed.map((functionDefinition) => {
+    (this._cluster.timed || []).map((functionDefinition) => {
       try {
         this._console.info(`Setting up ${functionDefinition.name} function`, {
           namespace: this._namespace,
@@ -77,8 +79,7 @@ class FunctionsModule {
 
         /* Setup config */
         const pathname = this._path.join(
-          this._dependencies.root,
-          'src',
+          this._sourceRoot,
           functionDefinition.route,
         );
         const functionName = functionDefinition.name;
@@ -143,7 +144,7 @@ class FunctionsModule {
     });
 
     // build each startup routes
-    this._cluster.startup.map((functionDefinition) => {
+    (this._cluster.startup || []).map((functionDefinition) => {
       try {
         this._console.info(`Setting up ${functionDefinition.name} function`, {
           namespace: this._namespace,
@@ -151,8 +152,7 @@ class FunctionsModule {
 
         /* Setup config */
         const pathname = this._path.join(
-          this._dependencies.root,
-          'src',
+          this._sourceRoot,
           functionDefinition.route,
         );
         const functionName = functionDefinition.name;

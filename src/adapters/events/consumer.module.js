@@ -61,7 +61,7 @@ class EventConsumerModule {
 
   #registerDynamicEvents({ consumer }) {
     this._eventSystemDefinition = require(
-      `${this._dependencies.root}/src/events/index`,
+      this._path.join(this.#sourceRoot, 'events', 'index'),
     );
 
     this.#subscribeTopics({ consumer });
@@ -115,11 +115,7 @@ class EventConsumerModule {
     }
 
     /* Setup config */
-    const pathname = this._path.join(
-      this._dependencies.root,
-      'src',
-      eventSettings.filename,
-    );
+    const pathname = this._path.join(this.#sourceRoot, eventSettings.filename);
 
     /* Setup event */
     const Event = require(pathname);
@@ -163,6 +159,13 @@ class EventConsumerModule {
 
   get id() {
     return this._consumer.id;
+  }
+
+  get #sourceRoot() {
+    return (
+      this._dependencies.namespace?.sourceRoot ||
+      this._path.join(this._dependencies.root, 'src')
+    );
   }
 }
 

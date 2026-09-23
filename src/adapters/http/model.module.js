@@ -14,7 +14,9 @@ class ModelModule {
   setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
-    this._models = require(`${this._dependencies.root}/src/models/index`);
+    this._models = require(
+      this._dependencies.path.join(this.#sourceRoot, 'models', 'index'),
+    );
     this.#registerModelsAsTypes();
 
     this._console.success('Module loaded', { namespace: this._namespace });
@@ -40,7 +42,16 @@ class ModelModule {
         instance: defaultInstance,
       });
     });
-    this._console.success('All models registered as types successfully.', { namespace: this._namespace });
+    this._console.success('All models registered as types successfully.', {
+      namespace: this._namespace,
+    });
+  }
+
+  get #sourceRoot() {
+    return (
+      this._dependencies.namespace?.sourceRoot ||
+      this._dependencies.path.join(this._dependencies.root, 'src')
+    );
   }
 
   get models() {

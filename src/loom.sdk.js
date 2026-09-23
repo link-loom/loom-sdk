@@ -19,6 +19,7 @@ class Loom {
     this._eventBrokerModule = {};
     this._eventBrokerModule = {};
     this._streamModule = {};
+    this._namespacesModule = {};
     this._namespace = '[Loom]';
   }
 
@@ -98,6 +99,8 @@ class Loom {
 
     this.#setupWorkers();
 
+    this.#setupNamespaces();
+
     this.#setupApi();
 
     this.#setupEventBroker();
@@ -105,6 +108,8 @@ class Loom {
     this.#setupEventProducer();
 
     this.#setupEventConsumer();
+
+    this.#setupNamespaceEvents();
 
     this.#setupServer();
 
@@ -188,9 +193,7 @@ class Loom {
 
   #setupStreams() {
     const { StreamModule } = require('./adapters/streams/stream.module');
-    this._streamModule = new StreamModule(
-      this._dependenciesModule.core.get(),
-    );
+    this._streamModule = new StreamModule(this._dependenciesModule.core.get());
     this._streamModule.setup();
 
     this._dependenciesModule.core.add(this._streamModule, 'StreamModule');
@@ -219,10 +222,29 @@ class Loom {
 
   #setupWorkers() {
     const { WorkersModule } = require('./adapters/workers/workers.module');
-    this._workersModule = new WorkersModule(this._dependenciesModule.core.get());
+    this._workersModule = new WorkersModule(
+      this._dependenciesModule.core.get(),
+    );
     this._workersModule.setup();
 
     this._dependenciesModule.core.add(this._workersModule, 'WorkersModule');
+  }
+
+  #setupNamespaces() {
+    const { NamespacesModule } = require('./core/namespaces.module');
+    this._namespacesModule = new NamespacesModule(
+      this._dependenciesModule.core.get(),
+    );
+    this._namespacesModule.setup();
+
+    this._dependenciesModule.core.add(
+      this._namespacesModule,
+      'NamespacesModule',
+    );
+  }
+
+  #setupNamespaceEvents() {
+    this._namespacesModule.setupEvents();
   }
 
   #setupModels() {

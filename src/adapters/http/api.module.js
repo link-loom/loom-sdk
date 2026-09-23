@@ -18,12 +18,15 @@ class ApiModule {
     this._path = dependencies.path;
     this._multer = dependencies.multerModule;
     this._storage = {};
+    this._authHandlers = {};
   }
 
   setup() {
     this._console.success('Loading module', { namespace: this._namespace });
 
     this.#handleStorageConfig();
+
+    this.#loadAuthHandlers();
 
     this.#buildRoutes();
 
@@ -43,7 +46,7 @@ class ApiModule {
    * @param {Object} args.endpoint - Information about the endpoint including its method, httpRoute, and whether it's protected.
    * @returns {void}
    */
-  #handleHttpMethod({ route, domain, endpoint }) {
+  #handleHttpMethod({ route, domain, endpoint, router }) {
     // Convert endpoint method to lower case.
     const method = endpoint.method.toLocaleLowerCase();
 
@@ -54,8 +57,7 @@ class ApiModule {
     const routeHandler = endpoint.streaming
       ? (req, res) =>
           this.#handleStreamRoute({ route, domain, endpoint, req, res })
-      : (req, res) =>
-          this.#handleRoute({ route, domain, endpoint, req, res });
+      : (req, res) => this.#handleRoute({ route, domain, endpoint, req, res });
 
     // An array to hold any middleware functions that need to be applied.
     const middlewares = [];
@@ -63,7 +65,12 @@ class ApiModule {
     // Body parsing per-route: each endpoint gets its own parser with configurable limit.
     const bodyLimit = endpoint.bodyLimit || '100kb';
     middlewares.push(this._dependencies.bodyParser.json({ limit: bodyLimit }));
-    middlewares.push(this._dependencies.bodyParser.urlencoded({ extended: true, limit: bodyLimit }));
+    middlewares.push(
+      this._dependencies.bodyParser.urlencoded({
+        extended: true,
+        limit: bodyLimit,
+      }),
+    );
 
     // If the component supports file uploads, add the file handling middleware.
     if (endpoint.supportFile) {
@@ -75,11 +82,122 @@ class ApiModule {
       middlewares.push(this._utilities.validator.api.endpoint);
     }
 
+    // If the endpoint declares an authentication handler, add it.
+    const authMiddleware = this.#buildAuthMiddleware(endpoint);
+    if (authMiddleware) {
+      middlewares.push(authMiddleware);
+    }
+
     // Always add the main route handler as the last middleware.
     middlewares.push(routeHandler);
 
     // Register the route with all its middleware.
-    this._router[method](routePath, ...middlewares);
+    router[method](routePath, ...middlewares);
+  }
+
+  /**
+   * Loads the authentication handlers declared in `src/auth/index.js`
+   * (optional): `{ '<name>': HandlerClass }`. Each handler is built once with
+   * the service dependencies and exposes
+   * `authenticate({ req, params, headers })`, which returns a Link Loom
+   * response: `success(principal)` or `error(message, { status })`.
+   */
+  #loadAuthHandlers() {
+    const registryPath = this._path.join(
+      this._dependencies.root,
+      'src',
+      'auth',
+      'index.js',
+    );
+
+    if (!require('fs').existsSync(registryPath)) {
+      return;
+    }
+
+    const registry = require(registryPath);
+
+    Object.keys(registry || {}).forEach((handlerName) => {
+      try {
+        const Handler = registry[handlerName];
+        this._authHandlers[handlerName] = new Handler(this._dependencies);
+      } catch (error) {
+        this._console.error(
+          `Authentication handler failed: ${handlerName} — ${error?.message}`,
+          {
+            namespace: this._namespace,
+          },
+        );
+      }
+    });
+  }
+
+  /**
+   * `auth: 'public'` or no `auth` → no middleware. A handler that is not
+   * registered fails closed: the route answers 500 instead of running open.
+   */
+  #buildAuthMiddleware(endpoint) {
+    const handlerName = endpoint.auth;
+
+    if (!handlerName || handlerName === 'public') {
+      return null;
+    }
+
+    const handler = this._authHandlers[handlerName];
+
+    if (!handler || typeof handler.authenticate !== 'function') {
+      this._console.error(
+        `Route ${endpoint.method} ${endpoint.httpRoute} uses an unregistered authentication handler: ${handlerName}`,
+        {
+          namespace: this._namespace,
+        },
+      );
+
+      return (_req, res) => {
+        res
+          .status(500)
+          .json(
+            this._utilities.io.response.error(
+              `Authentication handler "${handlerName}" is not registered`,
+              { status: 500 },
+            ),
+          );
+      };
+    }
+
+    return async (req, res, next) => {
+      try {
+        const params = this._utilities.io.request.getParameters(req);
+        const authResponse = await handler.authenticate({
+          req,
+          params,
+          headers: req.headers,
+        });
+
+        if (!authResponse?.success) {
+          const status =
+            authResponse?.status && authResponse.status !== 200
+              ? authResponse.status
+              : 401;
+          res
+            .status(status)
+            .json(
+              authResponse ||
+                this._utilities.io.response.error('Unauthorized', { status }),
+            );
+          return;
+        }
+
+        req.principal = authResponse.result;
+        next();
+      } catch (error) {
+        this._console.error(error, { namespace: this._namespace });
+        res
+          .status(401)
+          .json(
+            this._utilities.io.response.error('Unauthorized', { status: 401 }),
+          );
+      }
+    };
   }
 
   #handleStorageConfig() {
@@ -100,6 +218,7 @@ class ApiModule {
       req,
       res,
       headers,
+      principal: req.principal,
     });
 
     // A handler that already wrote to the response (e.g. streamed a file with its own
@@ -129,6 +248,7 @@ class ApiModule {
         res,
         headers,
         stream,
+        principal: req.principal,
       });
     } catch (error) {
       if (!stream.closed) {
@@ -152,16 +272,17 @@ class ApiModule {
    * @param {string} args.domainPath - Joined domain segments, e.g. "finance/transactions".
    * @param {Object} args.endpoint   - Endpoint definition from the router tree.
    */
-  #registerEndpoint({ domainPath, endpoint }) {
+  #registerEndpoint({ domainPath, endpoint, context }) {
     try {
       const Route = require(
-        this._path.join(this._dependencies.root, `src/${endpoint.route}`),
+        this._path.join(context.sourceRoot, endpoint.route),
       );
 
       this.#handleHttpMethod({
-        route: new Route(this._dependencies),
+        route: new Route(context.dependencies),
         domain: domainPath,
         endpoint,
+        router: context.router,
       });
     } catch (error) {
       this._console.error(
@@ -186,7 +307,7 @@ class ApiModule {
    * @param {*} node - Current node in the router tree (object or array).
    * @param {string[]} domainSegments - Accumulated domain segments.
    */
-  #walkRouterNode(node, domainSegments = []) {
+  #walkRouterNode(node, domainSegments, context) {
     if (!node) return;
 
     // Case 1: leaf node is an array of endpoint definitions
@@ -194,7 +315,7 @@ class ApiModule {
       const domainPath = domainSegments.join('/');
 
       node.forEach((endpoint) => {
-        this.#registerEndpoint({ domainPath, endpoint });
+        this.#registerEndpoint({ domainPath, endpoint, context });
       });
 
       return;
@@ -208,7 +329,7 @@ class ApiModule {
         const child = node[key];
         const nextSegments = [...domainSegments, key];
 
-        this.#walkRouterNode(child, nextSegments);
+        this.#walkRouterNode(child, nextSegments, context);
       });
 
       return;
@@ -233,9 +354,9 @@ class ApiModule {
    *   endpoint.httpRoute = '/accounting-lock/list'
    *   → /finance/transactions/auditing/accounting-lock/list
    */
-  #buildApiEndpoints() {
+  #buildApiEndpoints(context) {
     const router = require(
-      this._path.join(this._dependencies.root, 'src', 'routes', 'router'),
+      this._path.join(context.sourceRoot, 'routes', 'router'),
     );
 
     // Iterate over each root key in the router and walk the tree.
@@ -245,11 +366,72 @@ class ApiModule {
       const node = router[rootKey];
 
       // Start recursion with the root key as the first domain segment.
-      this.#walkRouterNode(node, [rootKey]);
+      this.#walkRouterNode(node, [rootKey], context);
     });
+  }
 
-    // All API REST endpoints are mounted under the root path.
-    this._app.use('/', this._router);
+  /**
+   * Mounts every loaded namespace on its own prefix, with its own router,
+   * dependencies and OpenAPI document. Namespaces are mounted before the
+   * default router so its 404 catch-all never hides them.
+   */
+  #buildNamespaces() {
+    const namespaces = this._dependencies.NamespacesModule?.namespaces || [];
+
+    namespaces.forEach((namespaceContext) => {
+      const routerPath = this._path.join(
+        namespaceContext.sourceRoot,
+        'routes',
+        'router.js',
+      );
+
+      if (!require('fs').existsSync(routerPath)) {
+        this._console.info(
+          `Namespace without routes: ${namespaceContext.name}`,
+          { namespace: this._namespace },
+        );
+        return;
+      }
+
+      try {
+        const namespaceRouter = this._express.Router();
+
+        this.#buildApiEndpoints({
+          sourceRoot: namespaceContext.sourceRoot,
+          dependencies: namespaceContext.dependencies,
+          router: namespaceRouter,
+        });
+
+        this.#buildDocs({
+          mountPath: namespaceContext.prefix,
+          apis: [
+            this._path.join(
+              namespaceContext.sourceRoot,
+              'routes',
+              'api',
+              '**',
+              '*.route.js',
+            ),
+            this._path.join(
+              namespaceContext.sourceRoot,
+              'models',
+              '**',
+              '*.js',
+            ),
+          ],
+          title: `${this._config?.server?.name || 'Link Loom API'} · ${namespaceContext.name}`,
+        });
+
+        this._app.use(namespaceContext.prefix || '/', namespaceRouter);
+      } catch (error) {
+        this._console.error(
+          `Namespace routes failed: ${namespaceContext.name} — ${error?.message}`,
+          {
+            namespace: this._namespace,
+          },
+        );
+      }
+    });
   }
 
   /**
@@ -259,7 +441,7 @@ class ApiModule {
    * (normal dependency usage) and falls back to a local path when
    * running directly from the SDK repository.
    */
-  #buildDocs() {
+  #buildDocs({ mountPath = '', apis, title } = {}) {
     let baseModelPath;
 
     try {
@@ -286,39 +468,43 @@ class ApiModule {
       );
     }
 
+    const documentTitle =
+      title || this._config?.server?.name || 'Link Loom API';
+
     const options = {
       definition: {
         openapi: '3.0.0',
         info: {
-          title: this._config?.server?.name || 'Link Loom API',
+          title: documentTitle,
           version: this._config?.server?.version || '1.0.0',
         },
         servers: [
           {
-            url: `http://localhost:${this._config?.server?.port || 8080}`,
+            url: `http://localhost:${this._config?.server?.port || 8080}${mountPath}`,
             description: this._config?.server?.id || '',
           },
         ],
       },
       apis: [
-        'src/routes/api/**/*.route.js',
-        'src/models/**/*.js',
+        ...(apis || ['src/routes/api/**/*.route.js', 'src/models/**/*.js']),
         baseModelPath,
       ],
-      customSiteTitle: this._config?.server?.name || 'Link Loom API',
+      customSiteTitle: documentTitle,
     };
 
     const specs = this._swaggerJsdoc(options);
+    const uiOptions = {
+      customSiteTitle: `${documentTitle} - ${this._config?.server?.version}`,
+    };
 
+    // serveFiles keeps one UI per document; the global `serve` would share state.
     this._app.use(
-      '/open-api.playground',
-      this._swaggerUi.serve,
-      this._swaggerUi.setup(specs, {
-        customSiteTitle: `${this._config?.server?.name} - ${this._config?.server?.version}`,
-      }),
+      `${mountPath}/open-api.playground`,
+      this._swaggerUi.serveFiles(specs, uiOptions),
+      this._swaggerUi.setup(specs, uiOptions),
     );
 
-    this._app.get('/open-api.json', (_, res) => {
+    this._app.get(`${mountPath}/open-api.json`, (_, res) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(specs);
     });
@@ -327,7 +513,16 @@ class ApiModule {
   #buildRoutes() {
     this.#buildDocs();
 
-    this.#buildApiEndpoints();
+    this.#buildNamespaces();
+
+    // Default namespace: the service's own src/ tree, mounted at the root path.
+    this.#buildApiEndpoints({
+      sourceRoot: this._path.join(this._dependencies.root, 'src'),
+      dependencies: this._dependencies,
+      router: this._router,
+    });
+
+    this._app.use('/', this._router);
 
     // Something else route response a 404 error
     this._router.get('{*splat}', (_req, res) => {
